@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html, body {
+        html,
+        body {
             height: 100%;
             margin: 0;
             padding: 0;
@@ -51,33 +53,42 @@
         }
 
         @media print {
-            html, body {
+            @page {
+                size: 58mm auto;
+                margin: 0;
+            }
+
+            html,
+            body {
                 width: 58mm;
                 height: auto;
                 margin: 0 !important;
                 padding: 0 !important;
-            }
-            
-            body * {
-                visibility: hidden;
-                height: 0;
-                display: none;
+                background: white;
             }
 
-            #receipt,
-            #receipt * {
-                visibility: visible;
-                display: block;
-                height: auto;
+            .menu-container,
+            .header,
+            .footer-controls,
+            button,
+            .quantity-controls {
+                display: none !important;
             }
 
             #receipt {
-                position: fixed;
+                display: block !important;
+                position: absolute;
                 left: 0;
                 top: 0;
                 width: 58mm !important;
                 padding: 5px;
                 margin: 0;
+                visibility: visible !important;
+            }
+
+            #receipt * {
+                visibility: visible !important;
+                display: block !important;
             }
 
             .no-print {
@@ -114,11 +125,15 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="quantity-controls hidden flex items-center gap-2">
-                            <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
-                            <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
                         </div>
-                        <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
                     </div>
                 </div>
             </div>
@@ -132,11 +147,15 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="quantity-controls hidden flex items-center gap-2">
-                            <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
-                            <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
                         </div>
-                        <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
                     </div>
                 </div>
             </div>
@@ -150,11 +169,15 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="quantity-controls hidden flex items-center gap-2">
-                            <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
-                            <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
                         </div>
-                        <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
                     </div>
                 </div>
             </div>
@@ -168,11 +191,15 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="quantity-controls hidden flex items-center gap-2">
-                            <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
-                            <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
                         </div>
-                        <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
                     </div>
                 </div>
             </div>
@@ -303,4 +330,5 @@
         });
     </script>
 </body>
+
 </html>
