@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html,
-        body {
+        html, body {
             height: 100%;
             margin: 0;
             padding: 0;
@@ -39,26 +37,59 @@
             margin: 0;
         }
 
+        .receipt {
+            font-family: monospace;
+            font-size: 12px;
+            width: 58mm;
+            padding: 5px;
+            background: white;
+        }
+
+        .receipt .divider {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+        }
+
         @media print {
+            html, body {
+                width: 58mm;
+                height: auto;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
             body * {
                 visibility: hidden;
+                height: 0;
+                display: none;
             }
 
             #receipt,
             #receipt * {
                 visibility: visible;
+                display: block;
+                height: auto;
             }
 
             #receipt {
-                position: absolute;
+                position: fixed;
                 left: 0;
                 top: 0;
-                width: 58mm;
+                width: 58mm !important;
                 padding: 5px;
+                margin: 0;
             }
 
             .no-print {
-                display: none;
+                display: none !important;
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            .receipt {
+                width: 100%;
+                max-width: 58mm;
+                margin: 0 auto;
             }
         }
     </style>
@@ -83,15 +114,11 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
+                            <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
                         </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
                     </div>
                 </div>
             </div>
@@ -105,15 +132,11 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
+                            <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
                         </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
                     </div>
                 </div>
             </div>
@@ -127,15 +150,11 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
+                            <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
                         </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
                     </div>
                 </div>
             </div>
@@ -149,125 +168,55 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
+                            <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
                         </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Item template -->
-            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
-                <div class="flex items-center justify-between">
-                    <div class="flex-grow">
-                        <div class="font-medium">Trà Dâu Tằm Hạt Chia</div>
-                        <div class="text-sm text-gray-600">45.000đ</div>
+            <!-- Footer with total -->
+            <div class="p-4 border-t bg-white flex-none">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="text-lg font-semibold">Tổng cộng:</div>
+                        <div class="total-amount text-xl font-bold text-green-600">0đ</div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
-                        </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
-                    </div>
+                    <button class="checkout-btn px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                        Đặt hàng
+                    </button>
                 </div>
-            </div>
-
-            <!-- Item template -->
-            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
-                <div class="flex items-center justify-between">
-                    <div class="flex-grow">
-                        <div class="font-medium">Trà Xoài Nhiệt Đới</div>
-                        <div class="text-sm text-gray-600">45.000đ</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
-                        </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Item template -->
-            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
-                <div class="flex items-center justify-between">
-                    <div class="flex-grow">
-                        <div class="font-medium">Trà Ổi Hồng Chanh Sả</div>
-                        <div class="text-sm text-gray-600">45.000đ</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
-                        </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer with total -->
-        <div class="p-4 border-t bg-white flex-none">
-            <div class="flex justify-between items-center">
-                <div>
-                    <div class="text-lg font-semibold">Tổng cộng:</div>
-                    <div class="total-amount text-xl font-bold text-green-600">0đ</div>
-                </div>
-                <button class="checkout-btn px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-                    Đặt hàng
-                </button>
             </div>
         </div>
     </div>
 
     <!-- Receipt Template (Hidden by default) -->
     <div id="receipt" style="display: none;" class="receipt">
-        <div class="header">
-            <h2 style="margin: 0;">QUÁN TRÀ</h2>
-            <p style="margin: 5px 0;">Số 123 Đường ABC, Quận XYZ</p>
-            <p style="margin: 5px 0;">SĐT: 0123456789</p>
+        <div class="header" style="text-align: center;">
+            <h2 style="margin: 0; font-size: 14px; font-weight: bold;">QUÁN TRÀ</h2>
+            <p style="margin: 5px 0; font-size: 12px;">Số 123 Đường ABC, Quận XYZ</p>
+            <p style="margin: 5px 0; font-size: 12px;">SĐT: 0123456789</p>
         </div>
 
         <div class="divider"></div>
 
-        <div class="date" style="text-align: right;" id="receipt-date">
+        <div class="date" style="text-align: right; font-size: 12px;" id="receipt-date">
         </div>
 
         <div class="divider"></div>
 
-        <div id="receipt-items">
+        <div id="receipt-items" style="font-size: 12px;">
         </div>
 
         <div class="divider"></div>
 
-        <div class="total">
+        <div class="total" style="font-weight: bold; text-align: right; font-size: 13px;">
             Tổng cộng: <span id="receipt-total">0đ</span>
         </div>
 
-        <div class="footer">
+        <div class="footer" style="text-align: center; margin-top: 10px; font-size: 11px;">
             <p>Cảm ơn quý khách! Hẹn gặp lại!</p>
         </div>
     </div>
@@ -329,12 +278,12 @@
                     const itemTotal = price * quantity;
 
                     receiptItems += `
-                        <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                            <div>
+                        <div style="display: flex; justify-content: space-between; margin: 5px 0; font-size: 12px;">
+                            <div style="max-width: 70%;">
                                 <span style="margin-right: 10px;">${quantity}x</span>
-                                <span>${itemName}</span>
+                                <span style="word-break: break-word;">${itemName}</span>
                             </div>
-                            <div>${itemTotal.toLocaleString()}đ</div>
+                            <div style="white-space: nowrap;">${itemTotal.toLocaleString()}đ</div>
                         </div>
                     `;
                 });
@@ -344,13 +293,14 @@
                 $('#receipt-items').html(receiptItems);
                 $('#receipt-total').text(total);
 
-                // Show and print receipt
+                // Show receipt and print
                 $('#receipt').show();
-                window.print();
-                $('#receipt').hide();
+                setTimeout(() => {
+                    window.print();
+                    $('#receipt').hide();
+                }, 200);
             });
         });
     </script>
 </body>
-
 </html>
