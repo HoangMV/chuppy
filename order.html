@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Đồ Uống</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .menu-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .menu-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .menu-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .menu-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-full">
+    <div class="h-full flex flex-col max-w-md mx-auto bg-white shadow-lg">
+        <!-- Header -->
+        <div class="p-4 border-b flex-none">
+            <h1 class="text-xl font-bold text-center text-gray-800">Menu Đồ Uống</h1>
+            <p class="text-sm text-center text-gray-600">Vui lòng chọn đồ uống của bạn</p>
+        </div>
+
+        <!-- Scrollable Menu Items -->
+        <div class="menu-container flex-1 overflow-y-auto">
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Đào Cam Sả</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Đào Cam Sả</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Vải Hoa Hồng</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Đào Cam Sả</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Chanh Dây Mật Ong</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Đào Cam Sả</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Táo Quế</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Dâu Tằm Hạt Chia</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Xoài Nhiệt Đới</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Item template -->
+            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
+                <div class="flex items-center justify-between">
+                    <div class="flex-grow">
+                        <div class="font-medium">Trà Ổi Hồng Chanh Sả</div>
+                        <div class="text-sm text-gray-600">45.000đ</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="quantity-controls hidden flex items-center gap-2">
+                            <button
+                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
+                                min="0" readonly>
+                            <button
+                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                        </div>
+                        <button
+                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer with total -->
+        <div class="p-4 border-t bg-white flex-none">
+            <div class="flex justify-between items-center">
+                <div>
+                    <div class="text-lg font-semibold">Tổng cộng:</div>
+                    <div class="total-amount text-xl font-bold text-green-600">0đ</div>
+                </div>
+                <button class="checkout-btn px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    Đặt hàng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            function calculateTotal() {
+                let total = 0;
+                // Chỉ tính những quantity-controls không bị ẩn (những món đã được chọn)
+                $('.quantity-controls:not(.hidden) .quantity-input').each(function () {
+                    const quantity = parseInt($(this).val());
+                    const price = parseInt($(this).closest('[data-price]').data('price'));
+                    total += quantity * price;
+                });
+                $('.total-amount').text(total.toLocaleString() + 'đ');
+            }
+
+            // Handle select button click
+            $('.select-btn').click(function () {
+                const controls = $(this).siblings('.quantity-controls');
+                controls.removeClass('hidden');
+                $(this).addClass('hidden');
+                calculateTotal();
+            });
+
+            $('.increase-btn').click(function () {
+                const input = $(this).siblings('.quantity-input');
+                input.val(parseInt(input.val()) + 1);
+                calculateTotal();
+            });
+
+            $('.decrease-btn').click(function () {
+                const input = $(this).siblings('.quantity-input');
+                const value = parseInt(input.val());
+                if (value > 1) {
+                    input.val(value - 1);
+                } else if (value === 1) {
+                    input.val(0);
+                    const controls = $(this).closest('.quantity-controls');
+                    const selectBtn = controls.siblings('.select-btn');
+                    controls.addClass('hidden');
+                    selectBtn.removeClass('hidden');
+                }
+                calculateTotal();
+            });
+
+            $('.checkout-btn').click(function () {
+                const total = $('.total-amount').text();
+                if (total !== '0đ') {
+                    alert('Đặt hàng thành công!\nTổng tiền: ' + total);
+                } else {
+                    alert('Vui lòng chọn ít nhất một món!');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
