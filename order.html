@@ -38,6 +38,29 @@
             -webkit-appearance: none;
             margin: 0;
         }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #receipt,
+            #receipt * {
+                visibility: visible;
+            }
+
+            #receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 58mm;
+                padding: 5px;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
     </style>
 </head>
 
@@ -77,27 +100,6 @@
             <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
                 <div class="flex items-center justify-between">
                     <div class="flex-grow">
-                        <div class="font-medium">Trà Đào Cam Sả</div>
-                        <div class="text-sm text-gray-600">45.000đ</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
-                        </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
-                    </div>
-                </div>
-            </div>
-            <!-- Item template -->
-            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
-                <div class="flex items-center justify-between">
-                    <div class="flex-grow">
                         <div class="font-medium">Trà Vải Hoa Hồng</div>
                         <div class="text-sm text-gray-600">45.000đ</div>
                     </div>
@@ -115,27 +117,7 @@
                     </div>
                 </div>
             </div>
-            <!-- Item template -->
-            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
-                <div class="flex items-center justify-between">
-                    <div class="flex-grow">
-                        <div class="font-medium">Trà Đào Cam Sả</div>
-                        <div class="text-sm text-gray-600">45.000đ</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
-                        </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
-                    </div>
-                </div>
-            </div>
+
             <!-- Item template -->
             <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
                 <div class="flex items-center justify-between">
@@ -157,27 +139,7 @@
                     </div>
                 </div>
             </div>
-            <!-- Item template -->
-            <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
-                <div class="flex items-center justify-between">
-                    <div class="flex-grow">
-                        <div class="font-medium">Trà Đào Cam Sả</div>
-                        <div class="text-sm text-gray-600">45.000đ</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="quantity-controls hidden flex items-center gap-2">
-                            <button
-                                class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                            <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1"
-                                min="0" readonly>
-                            <button
-                                class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
-                        </div>
-                        <button
-                            class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
-                    </div>
-                </div>
-            </div>
+
             <!-- Item template -->
             <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
                 <div class="flex items-center justify-between">
@@ -199,6 +161,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Item template -->
             <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
                 <div class="flex items-center justify-between">
@@ -220,6 +183,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Item template -->
             <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
                 <div class="flex items-center justify-between">
@@ -241,6 +205,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Item template -->
             <div class="p-4 border-b hover:bg-gray-50" data-price="45000">
                 <div class="flex items-center justify-between">
@@ -278,11 +243,39 @@
         </div>
     </div>
 
+    <!-- Receipt Template (Hidden by default) -->
+    <div id="receipt" style="display: none;" class="receipt">
+        <div class="header">
+            <h2 style="margin: 0;">QUÁN TRÀ</h2>
+            <p style="margin: 5px 0;">Số 123 Đường ABC, Quận XYZ</p>
+            <p style="margin: 5px 0;">SĐT: 0123456789</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="date" style="text-align: right;" id="receipt-date">
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="receipt-items">
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="total">
+            Tổng cộng: <span id="receipt-total">0đ</span>
+        </div>
+
+        <div class="footer">
+            <p>Cảm ơn quý khách! Hẹn gặp lại!</p>
+        </div>
+    </div>
+
     <script>
         $(document).ready(function () {
             function calculateTotal() {
                 let total = 0;
-                // Chỉ tính những quantity-controls không bị ẩn (những món đã được chọn)
                 $('.quantity-controls:not(.hidden) .quantity-input').each(function () {
                     const quantity = parseInt($(this).val());
                     const price = parseInt($(this).closest('[data-price]').data('price'));
@@ -322,11 +315,39 @@
 
             $('.checkout-btn').click(function () {
                 const total = $('.total-amount').text();
-                if (total !== '0đ') {
-                    alert('Đặt hàng thành công!\nTổng tiền: ' + total);
-                } else {
+                if (total === '0đ') {
                     alert('Vui lòng chọn ít nhất một món!');
+                    return;
                 }
+
+                // Get selected items
+                let receiptItems = '';
+                $('.quantity-controls:not(.hidden)').each(function () {
+                    const itemName = $(this).closest('[data-price]').find('.font-medium').text();
+                    const quantity = parseInt($(this).find('.quantity-input').val());
+                    const price = parseInt($(this).closest('[data-price]').data('price'));
+                    const itemTotal = price * quantity;
+
+                    receiptItems += `
+                        <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                            <div>
+                                <span style="margin-right: 10px;">${quantity}x</span>
+                                <span>${itemName}</span>
+                            </div>
+                            <div>${itemTotal.toLocaleString()}đ</div>
+                        </div>
+                    `;
+                });
+
+                // Update receipt
+                $('#receipt-date').text(new Date().toLocaleString('vi-VN'));
+                $('#receipt-items').html(receiptItems);
+                $('#receipt-total').text(total);
+
+                // Show and print receipt
+                $('#receipt').show();
+                window.print();
+                $('#receipt').hide();
             });
         });
     </script>
