@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuppy trái cây</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .menu-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .menu-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .menu-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .menu-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .receipt {
+            font-family: monospace;
+            font-size: 12px;
+            width: 58mm;
+            padding: 5px;
+            background: white;
+        }
+
+        .receipt .divider {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            max-width: 350px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(calc(100% + 20px));
+            transition: transform 0.3s ease-in-out;
+            z-index: 1001;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-success {
+            background-color: #10B981;
+        }
+
+        .notification-error {
+            background-color: #EF4444;
+        }
+
+        /* Login Form Styles */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-error {
+            color: #EF4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        @media print {
+            @page {
+                size: 58mm auto;
+                margin: 0;
+            }
+
+            html,
+            body {
+                width: 58mm;
+                height: auto;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white;
+            }
+
+            .menu-container,
+            .header,
+            .footer-controls,
+            .login-container,
+            button,
+            .quantity-controls,
+            .notification,
+            .loading-overlay {
+                display: none !important;
+            }
+
+            #receipt {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 58mm !important;
+                padding: 5px;
+                margin: 0;
+                visibility: visible !important;
+            }
+
+            #receipt * {
+                visibility: visible !important;
+                display: block !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            .receipt {
+                width: 100%;
+                max-width: 58mm;
+                margin: 0 auto;
+            }
+
+            .notification {
+                top: auto;
+                bottom: 20px;
+                left: 20px;
+                right: 20px;
+                transform: translateY(calc(100% + 20px));
+            }
+
+            .notification.show {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-full">
+    <!-- Login Form -->
+    <div id="loginForm" class="login-container">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+            <h2 class="text-2xl font-bold mb-6 text-center">Đăng nhập</h2>
+            <form id="loginFormElement" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                    <input type="password" id="password" name="password" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                </div>
+                <div id="loginError" class="login-error">
+                    Tên đăng nhập hoặc mật khẩu không đúng!
+                </div>
+                <button type="submit"
+                    class="w-full bg-blue-500 text-white rounded-md py-2 hover:bg-blue-600 transition-colors">
+                    Đăng nhập
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="h-full flex flex-col max-w-md mx-auto bg-white shadow-lg">
+        <!-- Header with user info and logout -->
+        <div class="p-2 border-b flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">Chuppy trái cây</h1>
+            <div class="flex items-center gap-4">
+                <span id="employeeName" class="text-sm text-gray-600"></span>
+                <button id="logoutBtn" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                    Đăng xuất
+                </button>
+            </div>
+        </div>
+
+        <!-- Menu Container -->
+        <div class="menu-container flex-1 overflow-y-auto" style="display: none;">
+            <!-- Items will be loaded dynamically -->
+        </div>
+
+        <!-- Footer Controls -->
+        <div class="p-4 border-t bg-white" style="display: none;">
+            <div class="flex justify-between items-center">
+                <div>
+                    <div class="text-lg font-semibold">Tổng cộng:</div>
+                    <div class="total-amount text-xl font-bold text-green-600">0đ</div>
+                </div>
+                <button class="checkout-btn px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    Đặt hàng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Template -->
+    <div id="receipt" style="display: none;" class="receipt">
+        <div class="header" style="text-align: center;">
+            <h2 style="margin: 0; font-size: 14px; font-weight: bold;">CHUPPY TRÁI CÂY</h2>
+            <p style="margin: 5px 0; font-size: 12px;">Số 123 Đường ABC, Quận XYZ</p>
+            <p style="margin: 5px 0; font-size: 12px;">SĐT: 0123456789</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="date" style="text-align: right; font-size: 12px;" id="receipt-date">
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="receipt-items" style="font-size: 12px;">
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="total" style="font-weight: bold; text-align: right; font-size: 13px;">
+            Tổng cộng: <span id="receipt-total">0đ</span>
+        </div>
+
+        <div class="cashier" style="text-align: right; font-size: 12px; margin-top: 5px;">
+            Thu ngân: <span id="receipt-employee"></span>
+        </div>
+
+        <div class="order-id" style="text-align: right; font-size: 12px;">
+            Mã đơn: <span id="receipt-order-id"></span>
+        </div>
+
+        <div class="footer" style="text-align: center; margin-top: 10px; font-size: 11px;">
+            <p>Cảm ơn quý khách! Hẹn gặp lại!</p>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="notification notification-success" id="successNotification">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <div>
+            <h3 class="font-bold">Đặt hàng thành công!</h3>
+            <p class="text-sm">Đơn hàng của bạn đã được ghi nhận.</p>
+        </div>
+    </div>
+
+    <div class="notification notification-error" id="errorNotification">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        <div>
+            <h3 class="font-bold">Đã xảy ra lỗi!</h3>
+            <p class="text-sm">Vui lòng thử lại sau.</p>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+        <p class="mt-4 text-gray-600">Đang xử lý đơn hàng...</p>
+    </div>
+
+    <script>
+        // Constants
+        const appId = '18106b24-b67b-43ad-9bd5-8daa415033be';
+        const accessKey = 'V2-VFpo4-Ne4l2-DoG0i-hwxGG-6fEPg-8yEiP-lW2MA-ltsYx';
+        const region = 'www';
+
+        // API Request function
+        async function apiRequest(tableName, action, data) {
+            const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
+            try {
+                const response = await $.ajax({
+                    url: apiUrl,
+                    method: 'POST',
+                    headers: {
+                        'ApplicationAccessKey': accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify({
+                        Action: action,
+                        Properties: {
+                            Locale: 'vi-VN',
+                            Timezone: 'Asia/Ho_Chi_Minh'
+                        },
+                        ...data
+                    })
+                });
+                return response;
+            } catch (error) {
+                console.error('API Request Error:', error);
+                throw error;
+            }
+        }
+
+        // Login function
+        async function handleLogin(username, password) {
+            try {
+                if (!username || !password) {
+                    console.error('Username or password is empty');
+                    return false;
+                }
+
+                const response = await apiRequest('DSNV', 'Find', {
+                    Selector: `Filter(DSNV, [username] = '${username}' and [password] = '${password}')`
+                });
+
+                console.log('Server Response:', response);
+
+                if (response && Array.isArray(response) && response.length > 0) {
+                    // Tìm nhân viên có username và password khớp
+                    const matchedEmployee = response.find(emp =>
+                        emp.username === username && emp.password === password
+                    );
+
+                    if (matchedEmployee) {
+                        // Lưu thông tin nhân viên vào session
+                        sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                        sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                        sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+                        return true;
+                    }
+                }
+
+                $('#loginError').show();
+                return false;
+
+            } catch (error) {
+                console.error('Login Error:', error);
+                $('#loginError').show();
+                return false;
+            }
+        }
+
+        // Check login status
+        function checkLoginStatus() {
+            const employeeName = sessionStorage.getItem('employeeName');
+            if (!employeeName) {
+                sessionStorage.clear();
+                $('#loginForm').show();
+                $('.menu-container, .p-4.border-t').hide();
+                return false;
+            }
+
+            // Hiển thị thông tin nhân viên đăng nhập
+            const employeeData = JSON.parse(sessionStorage.getItem('employeeData') || '{}');
+            $('#loginForm').hide();
+            $('.menu-container, .p-4.border-t').show();
+            $('#employeeName').text(employeeData['Họ và Tên']);
+            return true;
+        }
+
+        // Load menu items
+        async function loadMenuItems() {
+            try {
+                $('.menu-container').html('<div class="p-4 text-center">Đang tải menu...</div>');
+                const menuItems = await apiRequest('san_pham', 'Find', {
+                    Selector: "Filter(san_pham, true)"
+                });
+
+                $('.menu-container').empty();
+                menuItems.forEach(item => {
+                    $('.menu-container').append(createMenuItem(item));
+                });
+                attachEventHandlers();
+            } catch (error) {
+                $('.menu-container').html(`
+                    <div class="p-4 text-center text-red-600">
+                        Không thể tải menu. Vui lòng thử lại sau.
+                        <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Thử lại
+                        </button>
+                    </div>
+                `);
+            }
+        }
+
+        // Create menu item HTML
+        function createMenuItem(item) {
+            return `
+                <div class="p-4 border-b hover:bg-gray-50" data-price="${item.gia}" data-id="${item.id_sp}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-grow">
+                            <div class="font-medium">${item.ten_sanpham}</div>
+                            <div class="text-sm text-gray-600">${parseInt(item.gia).toLocaleString()}đ</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="quantity-controls hidden flex items-center gap-2">
+                                <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                                <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
+                                <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            </div>
+                            <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Event Handlers
+        $(document).ready(function () {
+            // Initialize page
+            if (checkLoginStatus()) {
+                loadMenuItems();
+            }
+
+            // Login form submission
+            $('#loginFormElement').submit(async function (e) {
+                e.preventDefault();
+
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true);
+                submitBtn.text('Đang đăng nhập...');
+                $('#loginError').hide();
+
+                const username = $('#username').val();
+                const password = $('#password').val();
+
+                const success = await handleLogin(username, password);
+                if (success) {
+                    $('#loginError').hide();
+                    await loadMenuItems();
+                    checkLoginStatus();
+                } else {
+                    $('#loginError').show();
+                    $('#password').val('').focus();
+                }
+
+                submitBtn.prop('disabled', false);
+                submitBtn.text('Đăng nhập');
+            });
+
+            // Logout button
+            $('#logoutBtn').click(function () {
+                sessionStorage.removeItem('employeeName');
+                sessionStorage.removeItem('employeeRole');
+                sessionStorage.removeItem('employeeData');
+                checkLoginStatus();
+                $('#username').val('');
+                $('#password').val('');
+                $('#loginError').hide();
+            });
+        });
+
+        // Attach event handlers for menu items
+        function attachEventHandlers() {
+            // Select button
+            $('.select-btn').click(function () {
+                const controls = $(this).siblings('.quantity-controls');
+                controls.removeClass('hidden');
+                $(this).addClass('hidden');
+                calculateTotal();
+            });
+
+            // Increase quantity
+            $('.increase-btn').click(function () {
+                const input = $(this).siblings('.quantity-input');
+                input.val(parseInt(input.val()) + 1);
+                calculateTotal();
+            });
+
+            // Decrease quantity
+            $('.decrease-btn').click(function () {
+                const input = $(this).siblings('.quantity-input');
+                const currentValue = parseInt(input.val());
+                if (currentValue > 1) {
+                    input.val(currentValue - 1);
+                } else {
+                    input.val(0);
+                    const controls = $(this).closest('.quantity-controls');
+                    const selectBtn = controls.siblings('.select-btn');
+                    controls.addClass('hidden');
+                    selectBtn.removeClass('hidden');
+                }
+                calculateTotal();
+            });
+
+            // Checkout button
+            $('.checkout-btn').click(async function () {
+                const total = $('.total-amount').text();
+                if (total === '0đ') {
+                    showNotification('error');
+                    return;
+                }
+
+                $('.loading-overlay').css('display', 'flex');
+
+                try {
+                    const orderId = generateOrderId();
+                    const employeeName = sessionStorage.getItem('employeeName');
+
+                    // Order data
+                    const orderData = {
+                        Rows: [{
+                            id_order: orderId,
+                            tong_tien: parseInt(total.replace(/[^\d]/g, '')),
+                            nhanvien: employeeName
+                        }]
+                    };
+
+                    // Gửi order
+                    const orderResponse = await apiRequest('order_nuoc', 'Add', orderData);
+
+                    // Order details
+                    const orderDetails = {
+                        Rows: $('.quantity-controls:not(.hidden)').map(function () {
+                            const quantity = parseInt($(this).find('.quantity-input').val());
+                            const itemContainer = $(this).closest('[data-price]');
+                            const price = parseInt(itemContainer.data('price'));
+                            const productName = itemContainer.find('.font-medium').text();
+                            return {
+                                id_order: orderId,
+                                ten_sanpham: productName,
+                                so_luong: quantity,
+                                gia: price
+                            };
+                        }).get()
+                    };
+
+                    // Gửi order details
+                    const detailResponse = await apiRequest('order_detail', 'Add', orderDetails);
+
+                    // Cập nhật hóa đơn
+                    let receiptItems = '';
+                    $('.quantity-controls:not(.hidden)').each(function () {
+                        const itemName = $(this).closest('[data-price]').find('.font-medium').text();
+                        const quantity = parseInt($(this).find('.quantity-input').val());
+                        const price = parseInt($(this).closest('[data-price]').data('price'));
+                        const itemTotal = price * quantity;
+
+                        receiptItems += `
+                            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                                <div style="max-width: 70%;">
+                                    <span style="margin-right: 10px;">${quantity}x</span>
+                                    <span>${itemName}</span>
+                                </div>
+                                <div style="white-space: nowrap;">${itemTotal.toLocaleString()}đ</div>
+                            </div>
+                        `;
+                    });
+
+                    // Cập nhật thông tin hóa đơn
+                    $('#receipt-date').text(new Date().toLocaleString('vi-VN'));
+                    $('#receipt-items').html(receiptItems);
+                    $('#receipt-total').text(total);
+                    $('#receipt-employee').text(employeeName || 'Unknown');
+                    $('#receipt-order-id').text(orderId);
+
+                    $('.loading-overlay').hide();
+                    showNotification('success');
+
+                    setTimeout(() => {
+                        $('#receipt').show();
+                        window.print();
+                        $('#receipt').hide();
+
+                        // Reset form
+                        $('.quantity-controls').addClass('hidden');
+                        $('.select-btn').removeClass('hidden');
+                        $('.quantity-input').val(1);
+                        calculateTotal();
+                    }, 200);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    $('.loading-overlay').hide();
+                    showNotification('error');
+                }
+            });
+        }
+
+        // Calculate total
+        function calculateTotal() {
+            let total = 0;
+            $('.quantity-controls:not(.hidden)').each(function () {
+                const quantity = parseInt($(this).find('.quantity-input').val());
+                const price = parseInt($(this).closest('[data-price]').data('price'));
+                total += quantity * price;
+            });
+            $('.total-amount').text(total.toLocaleString() + 'đ');
+        }
+
+        // Show notification
+        function showNotification(type) {
+            const notification = type === 'success' ?
+                $('#successNotification') : $('#errorNotification');
+
+            notification.addClass('show');
+            setTimeout(() => {
+                notification.removeClass('show');
+            }, 3000);
+        }
+
+        // Generate Order ID
+        function generateOrderId() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `OD_${day}${hours}${minutes}${seconds}`;
+        }
+    </script>
+</body>
+
+</html>
