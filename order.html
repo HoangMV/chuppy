@@ -41,15 +41,106 @@
 
         .receipt {
             font-family: monospace;
-            font-size: 12px;
-            width: 58mm;
-            padding: 5px;
+            width: 300px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            line-height: 1.5;
             background: white;
         }
 
-        .receipt .divider {
+        .receipt-header {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .receipt-header h1 {
+            font-size: 46px;
+            margin: 0;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        .receipt-header h2 {
+            font-size: 20px;
+            margin: 0;
+            line-height: 1;
+            font-weight: bold;
+        }
+
+        .receipt-header p {
+            line-height: 1.1;
+            font-size: 14px;
+        }
+
+        .receipt-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            margin: 3px 0;
+        }
+
+        /* .receipt-info {
+            margin: 3px 0;
+        } */
+
+        .receipt-info p {
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .receipt-items {
+            margin: 10px 0;
+        }
+
+        .receipt-columns {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+        }
+
+        .receipt-total {
+            font-size: 16px;
+            margin-top: 10px;
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        .receipt-divider {
             border-top: 1px dashed #000;
             margin: 5px 0;
+        }
+
+        .item-name {
+            flex: 2;
+        }
+
+        .item-quantity,
+        .item-price,
+        .item-total {
+            flex: 1;
+            text-align: right;
+        }
+
+        .item-price {
+            display: none;
+            /* Ẩn cột đơn giá */
         }
 
         .loading-overlay {
@@ -85,7 +176,6 @@
             }
         }
 
-        /* Custom notification styles */
         .notification {
             position: fixed;
             top: 20px;
@@ -114,15 +204,35 @@
             background-color: #EF4444;
         }
 
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-error {
+            color: #EF4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
         @media print {
             @page {
-                size: 58mm auto;
+                size: 80mm auto;
                 margin: 0;
             }
 
             html,
             body {
-                width: 58mm;
+                width: 80mm;
                 height: auto;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -132,6 +242,7 @@
             .menu-container,
             .header,
             .footer-controls,
+            .login-container,
             button,
             .quantity-controls,
             .notification,
@@ -139,31 +250,26 @@
                 display: none !important;
             }
 
-            #receipt {
+            .receipt {
                 display: block !important;
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 58mm !important;
+                width: 100% !important;
+                border: none;
                 padding: 5px;
-                margin: 0;
                 visibility: visible !important;
             }
 
-            #receipt * {
+            .receipt * {
                 visibility: visible !important;
-                display: block !important;
-            }
-
-            .no-print {
-                display: none !important;
             }
         }
 
         @media screen and (max-width: 600px) {
             .receipt {
                 width: 100%;
-                max-width: 58mm;
+                max-width: 300px;
                 margin: 0 auto;
             }
 
@@ -183,48 +289,52 @@
 </head>
 
 <body class="bg-gray-100 h-full">
-    <!-- Loading Overlay -->
-    <div class="loading-overlay">
-        <div class="spinner"></div>
-        <p class="mt-4 text-gray-600">Đang xử lý đơn hàng...</p>
-    </div>
-
-    <!-- Success Notification -->
-    <div class="notification notification-success" id="successNotification">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        <div>
-            <h3 class="font-bold">Đặt hàng thành công!</h3>
-            <p class="text-sm">Đơn hàng của bạn đã được ghi nhận.</p>
+    <!-- Login Form -->
+    <div id="loginForm" class="login-container">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+            <h2 class="text-2xl font-bold mb-6 text-center">Đăng nhập</h2>
+            <form id="loginFormElement" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                    <input type="password" id="password" name="password" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                </div>
+                <div id="loginError" class="login-error">
+                    Tên đăng nhập hoặc mật khẩu không đúng!
+                </div>
+                <button type="submit"
+                    class="w-full bg-blue-500 text-white rounded-md py-2 hover:bg-blue-600 transition-colors">
+                    Đăng nhập
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- Error Notification -->
-    <div class="notification notification-error" id="errorNotification">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-        <div>
-            <h3 class="font-bold">Đã xảy ra lỗi!</h3>
-            <p class="text-sm">Vui lòng thử lại sau.</p>
-        </div>
-    </div>
-
+    <!-- Main Content -->
     <div class="h-full flex flex-col max-w-md mx-auto bg-white shadow-lg">
-        <!-- Header -->
-        <div class="p-2 border-b flex-none">
-            <h1 class="text-xl font-bold text-center text-gray-800">Chuppy trái cây</h1>
-            <!-- <p class="text-sm text-center text-gray-600">Vui lòng chọn đồ uống của bạn</p> -->
+        <!-- Header with user info and logout -->
+        <div class="p-2 border-b flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">Chuppy trái cây</h1>
+            <div class="flex items-center gap-4">
+                <span id="employeeName" class="text-sm text-gray-600"></span>
+                <button id="logoutBtn" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                    Đăng xuất
+                </button>
+            </div>
         </div>
 
-        <!-- Scrollable Menu Items -->
-        <div class="menu-container flex-1 overflow-y-auto">
+        <!-- Menu Container -->
+        <div class="menu-container flex-1 overflow-y-auto" style="display: none;">
             <!-- Items will be loaded dynamically -->
         </div>
 
-        <!-- Footer with total -->
-        <div class="p-4 border-t bg-white flex-none">
+        <!-- Footer Controls -->
+        <div class="p-4 border-t bg-white" style="display: none;">
             <div class="flex justify-between items-center">
                 <div>
                     <div class="text-lg font-semibold">Tổng cộng:</div>
@@ -237,107 +347,202 @@
         </div>
     </div>
 
-    <!-- Receipt Template (Hidden by default) -->
+    <!-- Receipt Template -->
     <div id="receipt" style="display: none;" class="receipt">
-        <div class="header" style="text-align: center;">
-            <h2 style="margin: 0; font-size: 14px; font-weight: bold;">CHUPPY TRÁI CÂY</h2>
-            <p style="margin: 5px 0; font-size: 12px;">Số 123 Đường ABC, Quận XYZ</p>
-            <p style="margin: 5px 0; font-size: 12px;">SĐT: 0123456789</p>
+        <div class="receipt-header">
+            <h1>CHUPPY</h1>
+            <h2>Trà trái cây tươi</h2>
+            <p>Khu vui chơi, Bạch Đằng, TDM. BD</p>
+            <p>Hotline: 0349 485 567</p>
         </div>
 
-        <div class="divider"></div>
-
-        <div class="date" style="text-align: right; font-size: 12px;" id="receipt-date">
+        <div class="receipt-title">
+            HÓA ĐƠN THANH TOÁN
         </div>
 
-        <div class="divider"></div>
-
-        <div id="receipt-items" style="font-size: 12px;">
+        <div class="receipt-info">
+            <!-- <p>
+                <span>Số HĐ:</span>
+                <span id="receipt-order-id"></span>
+            </p> -->
+            <p>
+                <span>Nhân viên:</span>
+                <span id="receipt-cashier"></span>
+            </p>
+            <p>
+                <span>Ngày:</span>
+                <span id="receipt-date"></span>
+            </p>
         </div>
 
-        <div class="divider"></div>
+        <div class="receipt-divider"></div>
 
-        <div class="total" style="font-weight: bold; text-align: right; font-size: 13px;">
-            Tổng cộng: <span id="receipt-total">0đ</span>
+        <div class="receipt-items">
+            <div class="receipt-columns">
+                <span class="item-name">Tên món</span>
+                <span class="item-quantity">SL</span>
+                <span class="item-total">T.Tiền</span>
+            </div>
+
+            <div id="receipt-items-list">
+                <!-- Items will be dynamically inserted here -->
+            </div>
         </div>
 
-        <div class="footer" style="text-align: center; margin-top: 10px; font-size: 11px;">
-            <p>Cảm ơn quý khách! Hẹn gặp lại!</p>
+        <div class="receipt-total">
+            <p style="display: flex; justify-content: space-between; font-weight: bold;">
+                <span>Tiền thanh toán:</span>
+                <span id="receipt-total">0đ</span>
+            </p>
+        </div>
+        <div class="receipt-footer">
+            <p>Cảm ơn Quý khách! Hẹn gặp lại!</p>
         </div>
     </div>
 
+    <!-- Notifications -->
+    <div class="notification notification-success" id="successNotification">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <div>
+            <h3 class="font-bold">Đặt hàng thành công!</h3>
+            <p class="text-sm">Đơn hàng của bạn đã được ghi nhận.</p>
+        </div>
+    </div>
+
+    <div class="notification notification-error" id="errorNotification">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        <div>
+            <h3 class="font-bold">Đã xảy ra lỗi!</h3>
+            <p class="text-sm">Vui lòng thử lại sau.</p>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+        <p class="mt-4 text-gray-600">Đang xử lý đơn hàng...</p>
+    </div>
+
     <script>
-        // Constants for AppSheet connection
+        // Constants
         const appId = '18106b24-b67b-43ad-9bd5-8daa415033be';
         const accessKey = 'V2-VFpo4-Ne4l2-DoG0i-hwxGG-6fEPg-8yEiP-lW2MA-ltsYx';
         const region = 'www';
 
-        // Show notification function
-        function showNotification(type) {
-            const notification = type === 'success' ?
-                $('#successNotification') : $('#errorNotification');
-
-            notification.addClass('show');
-
-            setTimeout(() => {
-                notification.removeClass('show');
-            }, 3000);
-        }
-
-        // Generate Order ID function
-        function generateOrderId() {
-            const now = new Date();
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            return `OD_${day}${hours}${minutes}${seconds}`;
-        }
-
-        // API Request function using jQuery ajax
-        function apiRequest(tableName, action, data) {
+        // API Request function
+        async function apiRequest(tableName, action, data) {
             const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
-            return $.ajax({
-                url: apiUrl,
-                method: 'POST',
-                headers: {
-                    'ApplicationAccessKey': accessKey,
-                    'Content-Type': 'application/json'
-                },
-                data: JSON.stringify({
-                    Action: action,
-                    Properties: {
-                        Locale: 'vi-VN',
-                        Timezone: 'Asia/Ho_Chi_Minh'
-                    },
-                    ...data
-                })
-            }).then(response => {
-                return response;
-            }).catch(error => {
-                throw error;
-            });
-        }
-
-        // Function to fetch menu items
-        async function fetchMenuItems() {
             try {
-                const data = await apiRequest('san_pham', 'Find', {
-                    Selector: "Filter(san_pham, true)"
+                const response = await $.ajax({
+                    url: apiUrl,
+                    method: 'POST',
+                    headers: {
+                        'ApplicationAccessKey': accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify({
+                        Action: action,
+                        Properties: {
+                            Locale: 'vi-VN',
+                            Timezone: 'Asia/Ho_Chi_Minh'
+                        },
+                        ...data
+                    })
                 });
-
-                if (!Array.isArray(data)) {
-                    throw new Error('Invalid data format received');
-                }
-
-                return data;
+                return response;
             } catch (error) {
-                console.error('Failed to fetch menu items:', error);
+                console.error('API Request Error:', error);
                 throw error;
             }
         }
 
-        // Function to create menu item HTML
+        // Login function
+        async function handleLogin(username, password) {
+            try {
+                if (!username || !password) {
+                    console.error('Username or password is empty');
+                    return false;
+                }
+
+                const response = await apiRequest('DSNV', 'Find', {
+                    Selector: `Filter(DSNV, [username] = '${username}' and [password] = '${password}')`
+                });
+
+                console.log('Server Response:', response);
+
+                if (response && Array.isArray(response) && response.length > 0) {
+                    // Tìm nhân viên có username và password khớp
+                    const matchedEmployee = response.find(emp =>
+                        emp.username === username && emp.password === password
+                    );
+
+                    if (matchedEmployee) {
+                        // Lưu thông tin nhân viên vào session
+                        sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                        sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                        sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+                        return true;
+                    }
+                }
+
+                $('#loginError').show();
+                return false;
+
+            } catch (error) {
+                console.error('Login Error:', error);
+                $('#loginError').show();
+                return false;
+            }
+        }
+
+        // Check login status
+        function checkLoginStatus() {
+            const employeeName = sessionStorage.getItem('employeeName');
+            if (!employeeName) {
+                sessionStorage.clear();
+                $('#loginForm').show();
+                $('.menu-container, .p-4.border-t').hide();
+                return false;
+            }
+
+            // Hiển thị thông tin nhân viên đăng nhập
+            const employeeData = JSON.parse(sessionStorage.getItem('employeeData') || '{}');
+            $('#loginForm').hide();
+            $('.menu-container, .p-4.border-t').show();
+            $('#employeeName').text(employeeData['Họ và Tên']);
+            return true;
+        }
+
+        // Load menu items
+        async function loadMenuItems() {
+            try {
+                $('.menu-container').html('<div class="p-4 text-center">Đang tải menu...</div>');
+                const menuItems = await apiRequest('san_pham', 'Find', {
+                    Selector: "Filter(san_pham, true)"
+                });
+
+                $('.menu-container').empty();
+                menuItems.forEach(item => {
+                    $('.menu-container').append(createMenuItem(item));
+                });
+                attachEventHandlers();
+            } catch (error) {
+                $('.menu-container').html(`
+                    <div class="p-4 text-center text-red-600">
+                        Không thể tải menu. Vui lòng thử lại sau.
+                        <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Thử lại
+                        </button>
+                    </div>
+                `);
+            }
+        }
+
+        // Create menu item HTML
         function createMenuItem(item) {
             return `
                 <div class="p-4 border-b hover:bg-gray-50" data-price="${item.gia}" data-id="${item.id_sp}">
@@ -359,31 +564,54 @@
             `;
         }
 
-        // Initialize menu on page load
-        $(document).ready(async function () {
-            try {
-                $('.menu-container').html('<div class="p-4 text-center">Đang tải menu...</div>');
-                const menuItems = await fetchMenuItems();
-                $('.menu-container').empty();
-                menuItems.forEach(item => {
-                    $('.menu-container').append(createMenuItem(item));
-                });
-                attachEventHandlers();
-            } catch (error) {
-                $('.menu-container').html(`
-                    <div class="p-4 text-center text-red-600">
-                        Không thể tải menu. Vui lòng thử lại sau.
-                        <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                            Thử lại
-                        </button>
-                    </div>
-                `);
+        // Event Handlers
+        $(document).ready(function () {
+            // Initialize page
+            if (checkLoginStatus()) {
+                loadMenuItems();
             }
+
+            // Login form submission
+            $('#loginFormElement').submit(async function (e) {
+                e.preventDefault();
+
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true);
+                submitBtn.text('Đang đăng nhập...');
+                $('#loginError').hide();
+
+                const username = $('#username').val();
+                const password = $('#password').val();
+
+                const success = await handleLogin(username, password);
+                if (success) {
+                    $('#loginError').hide();
+                    await loadMenuItems();
+                    checkLoginStatus();
+                } else {
+                    $('#loginError').show();
+                    $('#password').val('').focus();
+                }
+
+                submitBtn.prop('disabled', false);
+                submitBtn.text('Đăng nhập');
+            });
+
+            // Logout button
+            $('#logoutBtn').click(function () {
+                sessionStorage.removeItem('employeeName');
+                sessionStorage.removeItem('employeeRole');
+                sessionStorage.removeItem('employeeData');
+                checkLoginStatus();
+                $('#username').val('');
+                $('#password').val('');
+                $('#loginError').hide();
+            });
         });
 
-        // Function to attach event handlers
+        // Attach event handlers for menu items
         function attachEventHandlers() {
-            // Select button handler
+            // Select button
             $('.select-btn').click(function () {
                 const controls = $(this).siblings('.quantity-controls');
                 controls.removeClass('hidden');
@@ -391,36 +619,30 @@
                 calculateTotal();
             });
 
-            // Increase quantity handler
+            // Increase quantity
             $('.increase-btn').click(function () {
                 const input = $(this).siblings('.quantity-input');
                 input.val(parseInt(input.val()) + 1);
                 calculateTotal();
             });
 
-            // Decrease quantity handler
+            // Decrease quantity
             $('.decrease-btn').click(function () {
                 const input = $(this).siblings('.quantity-input');
-                const value = parseInt(input.val());
-                if (value > 1) {
-                    input.val(value - 1);
-                } else if (value === 1) {
+                const currentValue = parseInt(input.val());
+                if (currentValue > 1) {
+                    input.val(currentValue - 1);
+                } else {
                     input.val(0);
                     const controls = $(this).closest('.quantity-controls');
                     const selectBtn = controls.siblings('.select-btn');
-                    controls.addClass('hidden');
                     controls.addClass('hidden');
                     selectBtn.removeClass('hidden');
                 }
                 calculateTotal();
             });
 
-            // Retry button handler
-            $('.retry-btn').click(function () {
-                location.reload();
-            });
-
-            // Checkout button handler
+            // Checkout button
             $('.checkout-btn').click(async function () {
                 const total = $('.total-amount').text();
                 if (total === '0đ') {
@@ -428,22 +650,23 @@
                     return;
                 }
 
-                // Show loading overlay
                 $('.loading-overlay').css('display', 'flex');
 
                 try {
+                    const orderId = generateOrderId();
+                    const employeeName = sessionStorage.getItem('employeeName');
+
                     // Order data
                     const orderData = {
                         Rows: [{
-                            id_order: generateOrderId(),
-                            tong_tien: parseInt(total.replace(/[^\d]/g, ''))
+                            id_order: orderId,
+                            tong_tien: parseInt(total.replace(/[^\d]/g, '')),
+                            nhanvien: employeeName
                         }]
                     };
-                    console.log('Order data:', orderData);
 
                     // Gửi order
                     const orderResponse = await apiRequest('order_nuoc', 'Add', orderData);
-                    console.log('Order saved:', orderResponse);
 
                     // Order details
                     const orderDetails = {
@@ -453,52 +676,48 @@
                             const price = parseInt(itemContainer.data('price'));
                             const productName = itemContainer.find('.font-medium').text();
                             return {
-                                id_order: orderData.Rows[0].id_order,
+                                id_order: orderId,
                                 ten_sanpham: productName,
                                 so_luong: quantity,
-                                gia: price
+                                gia: price,
+                                nhanvien: employeeName
                             };
                         }).get()
                     };
-                    console.log('Order details:', orderDetails);
 
                     // Gửi order details
                     const detailResponse = await apiRequest('order_detail', 'Add', orderDetails);
-                    console.log('Details saved:', detailResponse);
 
-                    // Cập nhật và in hóa đơn
+                    // Update receipt items
                     let receiptItems = '';
                     $('.quantity-controls:not(.hidden)').each(function () {
-                        const itemName = $(this).closest('[data-price]').find('.font-medium').text();
+                        const itemContainer = $(this).closest('[data-price]');
+                        const itemName = itemContainer.find('.font-medium').text();
                         const quantity = parseInt($(this).find('.quantity-input').val());
-                        const price = parseInt($(this).closest('[data-price]').data('price'));
+                        const price = parseInt(itemContainer.data('price'));
                         const itemTotal = price * quantity;
 
                         receiptItems += `
-                            <div style="display: flex; justify-content: space-between; margin: 5px 0; font-size: 12px;">
-                                <div style="max-width: 70%;">
-                                    <span style="margin-right: 10px;">${quantity}x</span>
-                                    <span style="word-break: break-word;">${itemName}</span>
-                                </div>
-                                <div style="white-space: nowrap;">${itemTotal.toLocaleString()}đ</div>
-                            </div>
-                        `;
+            <div class="receipt-item">
+                <span class="item-name">${itemName}</span>
+                <span class="item-quantity">${quantity}</span>
+                <span class="item-total">${itemTotal.toLocaleString()}</span>
+            </div>
+        `;
                     });
 
+                    // Update receipt information
+                    // $('#receipt-order-id').text(orderId);
+                    $('#receipt-cashier').text(employeeName);
                     $('#receipt-date').text(new Date().toLocaleString('vi-VN'));
-                    $('#receipt-items').html(receiptItems);
+                    $('#receipt-items-list').html(receiptItems);
                     $('#receipt-total').text(total);
 
-                    $('#receipt').show();
-
-                    // Hide loading overlay
                     $('.loading-overlay').hide();
-
-                    // Show success notification
                     showNotification('success');
 
-                    // Print receipt and reset form
                     setTimeout(() => {
+                        $('#receipt').show();
                         window.print();
                         $('#receipt').hide();
 
@@ -511,23 +730,42 @@
 
                 } catch (error) {
                     console.error('Error:', error);
-                    // Hide loading overlay
                     $('.loading-overlay').hide();
-                    // Show error notification
                     showNotification('error');
                 }
             });
         }
 
-        // Function to calculate total
+        // Calculate total
         function calculateTotal() {
             let total = 0;
-            $('.quantity-controls:not(.hidden) .quantity-input').each(function () {
-                const quantity = parseInt($(this).val());
+            $('.quantity-controls:not(.hidden)').each(function () {
+                const quantity = parseInt($(this).find('.quantity-input').val());
                 const price = parseInt($(this).closest('[data-price]').data('price'));
                 total += quantity * price;
             });
             $('.total-amount').text(total.toLocaleString() + 'đ');
+        }
+
+        // Show notification
+        function showNotification(type) {
+            const notification = type === 'success' ?
+                $('#successNotification') : $('#errorNotification');
+
+            notification.addClass('show');
+            setTimeout(() => {
+                notification.removeClass('show');
+            }, 3000);
+        }
+
+        // Generate Order ID
+        function generateOrderId() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `OD_${day}${hours}${minutes}${seconds}`;
         }
     </script>
 </body>
