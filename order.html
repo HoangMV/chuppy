@@ -41,15 +41,106 @@
 
         .receipt {
             font-family: monospace;
-            font-size: 12px;
-            width: 58mm;
-            padding: 5px;
+            width: 300px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            line-height: 1.5;
             background: white;
         }
 
-        .receipt .divider {
+        .receipt-header {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .receipt-header h1 {
+            font-size: 46px;
+            margin: 0;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        .receipt-header h2 {
+            font-size: 20px;
+            margin: 0;
+            line-height: 1;
+            font-weight: bold;
+        }
+
+        .receipt-header p {
+            line-height: 1.1;
+            font-size: 14px;
+        }
+
+        .receipt-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            margin: 3px 0;
+        }
+
+        /* .receipt-info {
+            margin: 3px 0;
+        } */
+
+        .receipt-info p {
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .receipt-items {
+            margin: 10px 0;
+        }
+
+        .receipt-columns {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+        }
+
+        .receipt-total {
+            font-size: 16px;
+            margin-top: 10px;
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        .receipt-divider {
             border-top: 1px dashed #000;
             margin: 5px 0;
+        }
+
+        .item-name {
+            flex: 2;
+        }
+
+        .item-quantity,
+        .item-price,
+        .item-total {
+            flex: 1;
+            text-align: right;
+        }
+
+        .item-price {
+            display: none;
+            /* Ẩn cột đơn giá */
         }
 
         .loading-overlay {
@@ -113,7 +204,6 @@
             background-color: #EF4444;
         }
 
-        /* Login Form Styles */
         .login-container {
             position: fixed;
             top: 0;
@@ -136,13 +226,13 @@
 
         @media print {
             @page {
-                size: 58mm auto;
+                size: 80mm auto;
                 margin: 0;
             }
 
             html,
             body {
-                width: 58mm;
+                width: 80mm;
                 height: auto;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -160,31 +250,26 @@
                 display: none !important;
             }
 
-            #receipt {
+            .receipt {
                 display: block !important;
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 58mm !important;
+                width: 100% !important;
+                border: none;
                 padding: 5px;
-                margin: 0;
                 visibility: visible !important;
             }
 
-            #receipt * {
+            .receipt * {
                 visibility: visible !important;
-                display: block !important;
-            }
-
-            .no-print {
-                display: none !important;
             }
         }
 
         @media screen and (max-width: 600px) {
             .receipt {
                 width: 100%;
-                max-width: 58mm;
+                max-width: 300px;
                 margin: 0 auto;
             }
 
@@ -264,38 +349,54 @@
 
     <!-- Receipt Template -->
     <div id="receipt" style="display: none;" class="receipt">
-        <div class="header" style="text-align: center;">
-            <h2 style="margin: 0; font-size: 14px; font-weight: bold;">CHUPPY TRÁI CÂY</h2>
-            <p style="margin: 5px 0; font-size: 12px;">Số 123 Đường ABC, Quận XYZ</p>
-            <p style="margin: 5px 0; font-size: 12px;">SĐT: 0123456789</p>
+        <div class="receipt-header">
+            <h1>CHUPPY</h1>
+            <h2>Trà trái cây tươi</h2>
+            <p>Khu vui chơi, Bạch Đằng, TDM. BD</p>
+            <p>Hotline: 0349 485 567</p>
         </div>
 
-        <div class="divider"></div>
-
-        <div class="date" style="text-align: right; font-size: 12px;" id="receipt-date">
+        <div class="receipt-title">
+            HÓA ĐƠN THANH TOÁN
         </div>
 
-        <div class="divider"></div>
-
-        <div id="receipt-items" style="font-size: 12px;">
+        <div class="receipt-info">
+            <!-- <p>
+                <span>Số HĐ:</span>
+                <span id="receipt-order-id"></span>
+            </p> -->
+            <p>
+                <span>Nhân viên:</span>
+                <span id="receipt-cashier"></span>
+            </p>
+            <p>
+                <span>Ngày:</span>
+                <span id="receipt-date"></span>
+            </p>
         </div>
 
-        <div class="divider"></div>
+        <div class="receipt-divider"></div>
 
-        <div class="total" style="font-weight: bold; text-align: right; font-size: 13px;">
-            Tổng cộng: <span id="receipt-total">0đ</span>
+        <div class="receipt-items">
+            <div class="receipt-columns">
+                <span class="item-name">Tên món</span>
+                <span class="item-quantity">SL</span>
+                <span class="item-total">T.Tiền</span>
+            </div>
+
+            <div id="receipt-items-list">
+                <!-- Items will be dynamically inserted here -->
+            </div>
         </div>
 
-        <div class="cashier" style="text-align: right; font-size: 12px; margin-top: 5px;">
-            Thu ngân: <span id="receipt-employee"></span>
+        <div class="receipt-total">
+            <p style="display: flex; justify-content: space-between; font-weight: bold;">
+                <span>Tiền thanh toán:</span>
+                <span id="receipt-total">0đ</span>
+            </p>
         </div>
-
-        <div class="order-id" style="text-align: right; font-size: 12px;">
-            Mã đơn: <span id="receipt-order-id"></span>
-        </div>
-
-        <div class="footer" style="text-align: center; margin-top: 10px; font-size: 11px;">
-            <p>Cảm ơn quý khách! Hẹn gặp lại!</p>
+        <div class="receipt-footer">
+            <p>Cảm ơn Quý khách! Hẹn gặp lại!</p>
         </div>
     </div>
 
@@ -578,7 +679,8 @@
                                 id_order: orderId,
                                 ten_sanpham: productName,
                                 so_luong: quantity,
-                                gia: price
+                                gia: price,
+                                nhanvien: employeeName
                             };
                         }).get()
                     };
@@ -586,31 +688,30 @@
                     // Gửi order details
                     const detailResponse = await apiRequest('order_detail', 'Add', orderDetails);
 
-                    // Cập nhật hóa đơn
+                    // Update receipt items
                     let receiptItems = '';
                     $('.quantity-controls:not(.hidden)').each(function () {
-                        const itemName = $(this).closest('[data-price]').find('.font-medium').text();
+                        const itemContainer = $(this).closest('[data-price]');
+                        const itemName = itemContainer.find('.font-medium').text();
                         const quantity = parseInt($(this).find('.quantity-input').val());
-                        const price = parseInt($(this).closest('[data-price]').data('price'));
+                        const price = parseInt(itemContainer.data('price'));
                         const itemTotal = price * quantity;
 
                         receiptItems += `
-                            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                                <div style="max-width: 70%;">
-                                    <span style="margin-right: 10px;">${quantity}x</span>
-                                    <span>${itemName}</span>
-                                </div>
-                                <div style="white-space: nowrap;">${itemTotal.toLocaleString()}đ</div>
-                            </div>
-                        `;
+            <div class="receipt-item">
+                <span class="item-name">${itemName}</span>
+                <span class="item-quantity">${quantity}</span>
+                <span class="item-total">${itemTotal.toLocaleString()}</span>
+            </div>
+        `;
                     });
 
-                    // Cập nhật thông tin hóa đơn
+                    // Update receipt information
+                    // $('#receipt-order-id').text(orderId);
+                    $('#receipt-cashier').text(employeeName);
                     $('#receipt-date').text(new Date().toLocaleString('vi-VN'));
-                    $('#receipt-items').html(receiptItems);
+                    $('#receipt-items-list').html(receiptItems);
                     $('#receipt-total').text(total);
-                    $('#receipt-employee').text(employeeName || 'Unknown');
-                    $('#receipt-order-id').text(orderId);
 
                     $('.loading-overlay').hide();
                     showNotification('success');
