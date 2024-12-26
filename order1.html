@@ -511,105 +511,7 @@
             }
         }
 
-        // Khởi tạo IndexedDB
-        const dbName = 'ChuppyDB';
-        const dbVersion = 1;
-        let db;
-
-        const initDB = () => {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(dbName, dbVersion);
-
-                request.onerror = (event) => {
-                    console.error('IndexedDB error:', event.target.error);
-                    reject(event.target.error);
-                };
-
-                request.onsuccess = (event) => {
-                    db = event.target.result;
-                    resolve(db);
-                };
-
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-
-                    // Tạo các object stores cũ
-                    if (!db.objectStoreNames.contains('menu')) {
-                        db.createObjectStore('menu', { keyPath: 'id_sp' });
-                    }
-                    if (!db.objectStoreNames.contains('employeeData')) {
-                        db.createObjectStore('employeeData', { keyPath: 'id' });
-                    }
-                    if (!db.objectStoreNames.contains('pendingOrders')) {
-                        db.createObjectStore('pendingOrders', { keyPath: 'orderId' });
-                    }
-                    // Thêm object store cho current login
-                    if (!db.objectStoreNames.contains('currentLogin')) {
-                        db.createObjectStore('currentLogin', { keyPath: 'id' });
-                    }
-                };
-            });
-        };
-
-        // Các hàm thao tác với IndexedDB
-        const dbOperations = {
-            saveData: (storeName, data) => {
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction([storeName], 'readwrite');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.put(data);
-
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            },
-
-            getData: (storeName, key) => {
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction([storeName], 'readonly');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.get(key);
-
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            },
-
-            getAllData: (storeName) => {
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction([storeName], 'readonly');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.getAll();
-
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            },
-
-            deleteData: (storeName, key) => {
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction([storeName], 'readwrite');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.delete(key);
-
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            },
-
-            clearStore: (storeName) => {
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction([storeName], 'readwrite');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.clear();
-
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            }
-        };
-
-        // Sửa lại các hàm xử lý dữ liệu để dùng IndexedDB
+        // Login handling
         async function handleLogin(username, password) {
             try {
                 if (!username || !password) {
@@ -617,58 +519,50 @@
                     return false;
                 }
 
-                // Kiểm tra offline cache từ IndexedDB
-                if (!navigator.onLine) {
-                    const cachedEmployees = await dbOperations.getAllData('employeeData');
-                    const matchedEmployee = cachedEmployees.find(emp =>
+                // Kiểm tra xem có offline cache không
+                const cachedEmployees = localStorage.getItem('cachedEmployees');
+                if (!navigator.onLine && cachedEmployees) {
+                    const employees = JSON.parse(cachedEmployees);
+                    const matchedEmployee = employees.find(emp =>
                         emp.username === username && emp.password === password
                     );
 
                     if (matchedEmployee) {
-                        // Lưu vào sessionStorage và IndexedDB
+                        // Lưu vào cả localStorage và sessionStorage
+                        localStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                        localStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                        localStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+
                         sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
                         sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
                         sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
-
-                        // Lưu current login vào IndexedDB
-                        await dbOperations.saveData('currentLogin', {
-                            id: 'current',
-                            employeeName: matchedEmployee['Họ và Tên'],
-                            employeeRole: matchedEmployee['Phân quyền'],
-                            employeeData: matchedEmployee
-                        });
                         return true;
                     }
                 }
 
-                // Online login
+                // Nếu online, thực hiện API call
                 if (navigator.onLine) {
                     const response = await apiRequest('DSNV', 'Find', {
                         Selector: `Filter(DSNV, [username] = '${username}' and [password] = '${password}')`
                     });
 
                     if (response && Array.isArray(response) && response.length > 0) {
-                        // Cache employee data
-                        for (const emp of response) {
-                            await dbOperations.saveData('employeeData', { ...emp, id: emp.username });
-                        }
+                        // Cache toàn bộ danh sách nhân viên
+                        localStorage.setItem('cachedEmployees', JSON.stringify(response));
 
                         const matchedEmployee = response.find(emp =>
                             emp.username === username && emp.password === password
                         );
 
                         if (matchedEmployee) {
+                            // Lưu vào cả localStorage và sessionStorage
+                            localStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                            localStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                            localStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+
                             sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
                             sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
                             sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
-
-                            // Lưu current login vào IndexedDB
-                            await dbOperations.saveData('currentLogin', {
-                                id: 'current',
-                                employeeName: matchedEmployee['Họ và Tên'],
-                                employeeRole: matchedEmployee['Phân quyền'],
-                                employeeData: matchedEmployee
-                            });
                             return true;
                         }
                     }
@@ -685,49 +579,44 @@
         }
 
         // Check login status and handle UI
-        async function checkLoginStatus() {
-            try {
-                // Kiểm tra trong sessionStorage trước
-                let employeeName = sessionStorage.getItem('employeeName');
-                let employeeData = sessionStorage.getItem('employeeData');
+        function checkLoginStatus() {
+            // Kiểm tra trong sessionStorage trước
+            let employeeName = sessionStorage.getItem('employeeName');
+            let employeeData = sessionStorage.getItem('employeeData');
 
-                // Nếu không có trong sessionStorage, kiểm tra IndexedDB
-                if (!employeeName) {
-                    const currentLogin = await dbOperations.getData('currentLogin', 'current');
-                    if (currentLogin) {
-                        employeeName = currentLogin.employeeName;
-                        employeeData = currentLogin.employeeData;
+            // Nếu không có trong sessionStorage, kiểm tra localStorage
+            if (!employeeName) {
+                employeeName = localStorage.getItem('employeeName');
+                employeeData = localStorage.getItem('employeeData');
 
-                        // Restore vào sessionStorage
-                        sessionStorage.setItem('employeeName', employeeName);
-                        sessionStorage.setItem('employeeRole', currentLogin.employeeRole);
-                        sessionStorage.setItem('employeeData', JSON.stringify(employeeData));
-                    }
+                // Nếu tìm thấy trong localStorage, khôi phục vào sessionStorage
+                if (employeeName) {
+                    sessionStorage.setItem('employeeName', employeeName);
+                    sessionStorage.setItem('employeeRole', localStorage.getItem('employeeRole'));
+                    sessionStorage.setItem('employeeData', employeeData);
                 }
+            }
 
-                if (!employeeName) {
-                    sessionStorage.clear();
-                    // Xóa current login
-                    await dbOperations.deleteData('currentLogin', 'current');
-                    $('#loginForm').show();
-                    $('.menu-container, .p-4.border-t').hide();
-                    return false;
-                }
-
-                employeeData = typeof employeeData === 'string' ? JSON.parse(employeeData) : employeeData;
-                $('#loginForm').hide();
-                $('.menu-container, .p-4.border-t').show();
-                $('#employeeName').text(employeeData['Họ và Tên']);
-
-                if (!navigator.onLine) {
-                    $('#offlineBadge').show();
-                }
-
-                return true;
-            } catch (error) {
-                console.error('Check Login Status Error:', error);
+            if (!employeeName) {
+                sessionStorage.clear();
+                localStorage.removeItem('employeeName');
+                localStorage.removeItem('employeeRole');
+                localStorage.removeItem('employeeData');
+                $('#loginForm').show();
+                $('.menu-container, .p-4.border-t').hide();
                 return false;
             }
+
+            employeeData = JSON.parse(employeeData || '{}');
+            $('#loginForm').hide();
+            $('.menu-container, .p-4.border-t').show();
+            $('#employeeName').text(employeeData['Họ và Tên']);
+
+            if (!navigator.onLine) {
+                $('#offlineBadge').show();
+            }
+
+            return true;
         }
 
         // Load menu items with offline support
@@ -735,19 +624,20 @@
             try {
                 $('.menu-container').html('<div class="p-4 text-center">Đang tải menu...</div>');
 
-                // Lấy cached menu từ IndexedDB
-                const cachedMenu = await dbOperations.getAllData('menu');
-                if (cachedMenu && cachedMenu.length > 0) {
-                    renderMenu(cachedMenu);
+                // Try to get cached menu first
+                const cachedMenu = localStorage.getItem('cachedMenu');
+                if (cachedMenu) {
+                    const menuData = JSON.parse(cachedMenu);
+                    renderMenu(menuData);
                 }
 
                 if (!navigator.onLine) {
-                    if (!cachedMenu || cachedMenu.length === 0) {
+                    if (!cachedMenu) {
                         $('.menu-container').html(`
-                    <div class="p-4 text-center text-red-600">
-                        Không thể tải menu. Vui lòng kết nối internet.
-                    </div>
-                `);
+                            <div class="p-4 text-center text-red-600">
+                                Không thể tải menu. Vui lòng kết nối internet.
+                            </div>
+                        `);
                     }
                     return;
                 }
@@ -756,23 +646,20 @@
                     Selector: "Filter(san_pham, true)"
                 });
 
-                // Cache menu vào IndexedDB
-                for (const item of menuItems) {
-                    await dbOperations.saveData('menu', item);
-                }
-
+                // Cache the menu
+                localStorage.setItem('cachedMenu', JSON.stringify(menuItems));
                 renderMenu(menuItems);
 
             } catch (error) {
                 console.error('Load Menu Error:', error);
                 $('.menu-container').html(`
-            <div class="p-4 text-center text-red-600">
-                Không thể tải menu. Vui lòng thử lại sau.
-                <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                    Thử lại
-                </button>
-            </div>
-        `);
+                    <div class="p-4 text-center text-red-600">
+                        Không thể tải menu. Vui lòng thử lại sau.
+                        <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Thử lại
+                        </button>
+                    </div>
+                `);
             }
         }
 
@@ -927,17 +814,21 @@
         }
 
         // Local storage functions for offline data
-        async function saveOrderLocally(order) {
-            await dbOperations.saveData('pendingOrders', order);
+        function saveOrderLocally(order) {
+            const orders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            orders.push(order);
+            localStorage.setItem('pendingOrders', JSON.stringify(orders));
         }
 
-        async function removeLocalOrder(orderId) {
-            await dbOperations.deleteData('pendingOrders', orderId);
+        function removeLocalOrder(orderId) {
+            const orders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            const filteredOrders = orders.filter(order => order.orderId !== orderId);
+            localStorage.setItem('pendingOrders', JSON.stringify(filteredOrders));
         }
 
         // Sync pending orders
         async function checkAndSyncPendingOrders() {
-            const orders = await dbOperations.getAllData('pendingOrders');
+            const orders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
             if (orders.length > 0) {
                 showNotification('info', 'Đang đồng bộ dữ liệu',
                     `Có ${orders.length} đơn hàng đang chờ xử lý`);
@@ -1052,54 +943,52 @@
         }
 
         // Initialize on page load
-        $(document).ready(async function () {
-            try {
-                await initDB();
-
-                // Check login status và load menu
-                if (checkLoginStatus()) {
-                    loadMenuItems();
-                }
-
-                // Login form submission
-                $('#loginFormElement').submit(async function (e) {
-                    e.preventDefault();
-
-                    const submitBtn = $(this).find('button[type="submit"]');
-                    submitBtn.prop('disabled', true).text('Đang đăng nhập...');
-                    $('#loginError').hide();
-
-                    const username = $('#username').val();
-                    const password = $('#password').val();
-
-                    try {
-                        const success = await handleLogin(username, password);
-                        if (success) {
-                            $('#loginError').hide();
-                            await loadMenuItems();
-                            checkLoginStatus();
-                        } else {
-                            $('#loginError').show();
-                            $('#password').val('').focus();
-                        }
-                    } catch (error) {
-                        console.error('Login Error:', error);
-                        showNotification('error', 'Lỗi đăng nhập', 'Vui lòng thử lại sau');
-                    } finally {
-                        submitBtn.prop('disabled', false).text('Đăng nhập');
-                    }
-                });
-
-            } catch (error) {
-                console.error('Database initialization failed:', error);
-                showNotification('error', 'Lỗi khởi tạo', 'Không thể khởi tạo cơ sở dữ liệu');
+        $(document).ready(function () {
+            // Check network status
+            if (!navigator.onLine) {
+                $('#offlineBadge').show();
             }
 
+            // Initialize page
+            if (checkLoginStatus()) {
+                loadMenuItems();
+            }
+
+            // Login form submission
+            $('#loginFormElement').submit(async function (e) {
+                e.preventDefault();
+
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true).text('Đang đăng nhập...');
+                $('#loginError').hide();
+
+                const username = $('#username').val();
+                const password = $('#password').val();
+
+                try {
+                    const success = await handleLogin(username, password);
+                    if (success) {
+                        $('#loginError').hide();
+                        await loadMenuItems();
+                        checkLoginStatus();
+                    } else {
+                        $('#loginError').show();
+                        $('#password').val('').focus();
+                    }
+                } catch (error) {
+                    console.error('Login Error:', error);
+                    showNotification('error', 'Lỗi đăng nhập', 'Vui lòng thử lại sau');
+                } finally {
+                    submitBtn.prop('disabled', false).text('Đăng nhập');
+                }
+            });
+
             // Logout button
-            $('#logoutBtn').click(async function () {
+            $('#logoutBtn').click(function () {
                 sessionStorage.clear();
-                // Xóa dữ liệu employee khỏi IndexedDB
-                await dbOperations.clearStore('employeeData');
+                localStorage.removeItem('employeeName');
+                localStorage.removeItem('employeeRole');
+                localStorage.removeItem('employeeData');
                 checkLoginStatus();
                 $('#username').val('');
                 $('#password').val('');
