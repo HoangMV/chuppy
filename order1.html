@@ -533,19 +533,19 @@
                 request.onupgradeneeded = (event) => {
                     const db = event.target.result;
 
-                    // Tạo object store cho menu
+                    // Tạo các object stores cũ
                     if (!db.objectStoreNames.contains('menu')) {
                         db.createObjectStore('menu', { keyPath: 'id_sp' });
                     }
-
-                    // Tạo object store cho employee data
                     if (!db.objectStoreNames.contains('employeeData')) {
                         db.createObjectStore('employeeData', { keyPath: 'id' });
                     }
-
-                    // Tạo object store cho pending orders
                     if (!db.objectStoreNames.contains('pendingOrders')) {
                         db.createObjectStore('pendingOrders', { keyPath: 'orderId' });
+                    }
+                    // Thêm object store cho current login
+                    if (!db.objectStoreNames.contains('currentLogin')) {
+                        db.createObjectStore('currentLogin', { keyPath: 'id' });
                     }
                 };
             });
@@ -625,10 +625,18 @@
                     );
 
                     if (matchedEmployee) {
-                        // Lưu vào sessionStorage để truy cập nhanh
+                        // Lưu vào sessionStorage và IndexedDB
                         sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
                         sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
                         sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+
+                        // Lưu current login vào IndexedDB
+                        await dbOperations.saveData('currentLogin', {
+                            id: 'current',
+                            employeeName: matchedEmployee['Họ và Tên'],
+                            employeeRole: matchedEmployee['Phân quyền'],
+                            employeeData: matchedEmployee
+                        });
                         return true;
                     }
                 }
@@ -640,7 +648,7 @@
                     });
 
                     if (response && Array.isArray(response) && response.length > 0) {
-                        // Cache employee data vào IndexedDB
+                        // Cache employee data
                         for (const emp of response) {
                             await dbOperations.saveData('employeeData', { ...emp, id: emp.username });
                         }
@@ -653,6 +661,14 @@
                             sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
                             sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
                             sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+
+                            // Lưu current login vào IndexedDB
+                            await dbOperations.saveData('currentLogin', {
+                                id: 'current',
+                                employeeName: matchedEmployee['Họ và Tên'],
+                                employeeRole: matchedEmployee['Phân quyền'],
+                                employeeData: matchedEmployee
+                            });
                             return true;
                         }
                     }
@@ -669,44 +685,49 @@
         }
 
         // Check login status and handle UI
-        function checkLoginStatus() {
-            // Kiểm tra trong sessionStorage trước
-            let employeeName = sessionStorage.getItem('employeeName');
-            let employeeData = sessionStorage.getItem('employeeData');
+        async function checkLoginStatus() {
+            try {
+                // Kiểm tra trong sessionStorage trước
+                let employeeName = sessionStorage.getItem('employeeName');
+                let employeeData = sessionStorage.getItem('employeeData');
 
-            // Nếu không có trong sessionStorage, kiểm tra localStorage
-            if (!employeeName) {
-                employeeName = localStorage.getItem('employeeName');
-                employeeData = localStorage.getItem('employeeData');
+                // Nếu không có trong sessionStorage, kiểm tra IndexedDB
+                if (!employeeName) {
+                    const currentLogin = await dbOperations.getData('currentLogin', 'current');
+                    if (currentLogin) {
+                        employeeName = currentLogin.employeeName;
+                        employeeData = currentLogin.employeeData;
 
-                // Nếu tìm thấy trong localStorage, khôi phục vào sessionStorage
-                if (employeeName) {
-                    sessionStorage.setItem('employeeName', employeeName);
-                    sessionStorage.setItem('employeeRole', localStorage.getItem('employeeRole'));
-                    sessionStorage.setItem('employeeData', employeeData);
+                        // Restore vào sessionStorage
+                        sessionStorage.setItem('employeeName', employeeName);
+                        sessionStorage.setItem('employeeRole', currentLogin.employeeRole);
+                        sessionStorage.setItem('employeeData', JSON.stringify(employeeData));
+                    }
                 }
-            }
 
-            if (!employeeName) {
-                sessionStorage.clear();
-                localStorage.removeItem('employeeName');
-                localStorage.removeItem('employeeRole');
-                localStorage.removeItem('employeeData');
-                $('#loginForm').show();
-                $('.menu-container, .p-4.border-t').hide();
+                if (!employeeName) {
+                    sessionStorage.clear();
+                    // Xóa current login
+                    await dbOperations.deleteData('currentLogin', 'current');
+                    $('#loginForm').show();
+                    $('.menu-container, .p-4.border-t').hide();
+                    return false;
+                }
+
+                employeeData = typeof employeeData === 'string' ? JSON.parse(employeeData) : employeeData;
+                $('#loginForm').hide();
+                $('.menu-container, .p-4.border-t').show();
+                $('#employeeName').text(employeeData['Họ và Tên']);
+
+                if (!navigator.onLine) {
+                    $('#offlineBadge').show();
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Check Login Status Error:', error);
                 return false;
             }
-
-            employeeData = JSON.parse(employeeData || '{}');
-            $('#loginForm').hide();
-            $('.menu-container, .p-4.border-t').show();
-            $('#employeeName').text(employeeData['Họ và Tên']);
-
-            if (!navigator.onLine) {
-                $('#offlineBadge').show();
-            }
-
-            return true;
         }
 
         // Load menu items with offline support
