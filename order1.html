@@ -519,20 +519,52 @@
                     return false;
                 }
 
-                const response = await apiRequest('DSNV', 'Find', {
-                    Selector: `Filter(DSNV, [username] = '${username}' and [password] = '${password}')`
-                });
-
-                if (response && Array.isArray(response) && response.length > 0) {
-                    const matchedEmployee = response.find(emp =>
+                // Kiểm tra xem có offline cache không
+                const cachedEmployees = localStorage.getItem('cachedEmployees');
+                if (!navigator.onLine && cachedEmployees) {
+                    const employees = JSON.parse(cachedEmployees);
+                    const matchedEmployee = employees.find(emp =>
                         emp.username === username && emp.password === password
                     );
 
                     if (matchedEmployee) {
+                        // Lưu vào cả localStorage và sessionStorage
+                        localStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                        localStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                        localStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+
                         sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
                         sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
                         sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
                         return true;
+                    }
+                }
+
+                // Nếu online, thực hiện API call
+                if (navigator.onLine) {
+                    const response = await apiRequest('DSNV', 'Find', {
+                        Selector: `Filter(DSNV, [username] = '${username}' and [password] = '${password}')`
+                    });
+
+                    if (response && Array.isArray(response) && response.length > 0) {
+                        // Cache toàn bộ danh sách nhân viên
+                        localStorage.setItem('cachedEmployees', JSON.stringify(response));
+
+                        const matchedEmployee = response.find(emp =>
+                            emp.username === username && emp.password === password
+                        );
+
+                        if (matchedEmployee) {
+                            // Lưu vào cả localStorage và sessionStorage
+                            localStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                            localStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                            localStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+
+                            sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                            sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                            sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+                            return true;
+                        }
                     }
                 }
 
@@ -548,20 +580,38 @@
 
         // Check login status and handle UI
         function checkLoginStatus() {
-            const employeeName = sessionStorage.getItem('employeeName');
+            // Kiểm tra trong sessionStorage trước
+            let employeeName = sessionStorage.getItem('employeeName');
+            let employeeData = sessionStorage.getItem('employeeData');
+
+            // Nếu không có trong sessionStorage, kiểm tra localStorage
+            if (!employeeName) {
+                employeeName = localStorage.getItem('employeeName');
+                employeeData = localStorage.getItem('employeeData');
+
+                // Nếu tìm thấy trong localStorage, khôi phục vào sessionStorage
+                if (employeeName) {
+                    sessionStorage.setItem('employeeName', employeeName);
+                    sessionStorage.setItem('employeeRole', localStorage.getItem('employeeRole'));
+                    sessionStorage.setItem('employeeData', employeeData);
+                }
+            }
+
             if (!employeeName) {
                 sessionStorage.clear();
+                localStorage.removeItem('employeeName');
+                localStorage.removeItem('employeeRole');
+                localStorage.removeItem('employeeData');
                 $('#loginForm').show();
                 $('.menu-container, .p-4.border-t').hide();
                 return false;
             }
 
-            const employeeData = JSON.parse(sessionStorage.getItem('employeeData') || '{}');
+            employeeData = JSON.parse(employeeData || '{}');
             $('#loginForm').hide();
             $('.menu-container, .p-4.border-t').show();
             $('#employeeName').text(employeeData['Họ và Tên']);
 
-            // Show offline badge if necessary
             if (!navigator.onLine) {
                 $('#offlineBadge').show();
             }
@@ -936,6 +986,9 @@
             // Logout button
             $('#logoutBtn').click(function () {
                 sessionStorage.clear();
+                localStorage.removeItem('employeeName');
+                localStorage.removeItem('employeeRole');
+                localStorage.removeItem('employeeData');
                 checkLoginStatus();
                 $('#username').val('');
                 $('#password').val('');
