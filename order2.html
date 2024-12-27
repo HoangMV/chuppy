@@ -13,11 +13,19 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            overscroll-behavior-y: none;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            touch-action: none;
+        }
+
+        /* Mobile styles */
+        @media screen {
+
+            html,
+            body {
+                overscroll-behavior-y: none;
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
+                touch-action: none;
+            }
         }
 
         .menu-container::-webkit-scrollbar {
