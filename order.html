@@ -15,6 +15,19 @@
             padding: 0;
         }
 
+        /* Mobile styles */
+        @media screen {
+
+            html,
+            body {
+                overscroll-behavior-y: none;
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
+                touch-action: none;
+            }
+        }
+
         .menu-container::-webkit-scrollbar {
             width: 6px;
         }
@@ -60,6 +73,7 @@
             font-weight: bold;
             line-height: 1.2;
         }
+
         .receipt-header h2 {
             font-size: 20px;
             margin: 0;
@@ -69,7 +83,7 @@
 
         .receipt-header p {
             line-height: 1.1;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .receipt-title {
@@ -78,10 +92,6 @@
             font-size: 24px;
             margin: 3px 0;
         }
-
-        /* .receipt-info {
-            margin: 3px 0;
-        } */
 
         .receipt-info p {
             font-size: 16px;
@@ -140,7 +150,6 @@
 
         .item-price {
             display: none;
-            /* Ẩn cột đơn giá */
         }
 
         .loading-overlay {
@@ -204,6 +213,14 @@
             background-color: #EF4444;
         }
 
+        .notification-warning {
+            background-color: #F59E0B;
+        }
+
+        .notification-info {
+            background-color: #3B82F6;
+        }
+
         .login-container {
             position: fixed;
             top: 0;
@@ -222,6 +239,16 @@
             font-size: 0.875rem;
             margin-top: 0.5rem;
             display: none;
+        }
+
+        .offline-badge {
+            display: none;
+            background-color: #EF4444;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
         }
 
         @media print {
@@ -319,7 +346,10 @@
     <div class="h-full flex flex-col max-w-md mx-auto bg-white shadow-lg">
         <!-- Header with user info and logout -->
         <div class="p-2 border-b flex justify-between items-center">
-            <h1 class="text-xl font-bold text-gray-800">Chuppy trái cây</h1>
+            <h1 class="text-xl font-bold text-gray-800">
+                Chuppy trái cây
+                <span id="offlineBadge" class="offline-badge">Offline</span>
+            </h1>
             <div class="flex items-center gap-4">
                 <span id="employeeName" class="text-sm text-gray-600"></span>
                 <button id="logoutBtn" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
@@ -361,10 +391,6 @@
         </div>
 
         <div class="receipt-info">
-            <!-- <p>
-                <span>Số HĐ:</span>
-                <span id="receipt-order-id"></span>
-            </p> -->
             <p>
                 <span>Nhân viên:</span>
                 <span id="receipt-cashier"></span>
@@ -432,12 +458,38 @@
         const appId = '18106b24-b67b-43ad-9bd5-8daa415033be';
         const accessKey = 'V2-VFpo4-Ne4l2-DoG0i-hwxGG-6fEPg-8yEiP-lW2MA-ltsYx';
         const region = 'www';
+        const API_TIMEOUT = 30000; // 30 seconds
+        const MAX_RETRIES = 3;
+        const RETRY_DELAY = 2000; // 2 seconds
 
-        // API Request function
-        async function apiRequest(tableName, action, data) {
+        // Network status handling
+        let isOnline = navigator.onLine;
+
+        window.addEventListener('online', function () {
+            isOnline = true;
+            $('#offlineBadge').hide();
+            showNotification('info', 'Đã kết nối lại internet', 'Đang đồng bộ dữ liệu...');
+            checkAndSyncPendingOrders();
+        });
+
+        window.addEventListener('offline', function () {
+            isOnline = false;
+            $('#offlineBadge').show();
+            showNotification('warning', 'Mất kết nối internet', 'Đơn hàng sẽ được lưu offline');
+        });
+
+        // Enhanced API Request function with timeout and retry
+        async function apiRequest(tableName, action, data, retryCount = 0) {
             const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
+
             try {
-                const response = await $.ajax({
+                // Create timeout promise
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Request timeout')), API_TIMEOUT);
+                });
+
+                // Create actual request promise
+                const fetchPromise = $.ajax({
                     url: apiUrl,
                     method: 'POST',
                     headers: {
@@ -453,14 +505,26 @@
                         ...data
                     })
                 });
+
+                // Race between timeout and actual request
+                const response = await Promise.race([fetchPromise, timeoutPromise]);
                 return response;
+
             } catch (error) {
-                console.error('API Request Error:', error);
+                console.error(`API Request Error (Attempt ${retryCount + 1}/${MAX_RETRIES}):`, error);
+
+                // Show network error notification with retry information
+                if (retryCount < MAX_RETRIES - 1) {
+                    showNotification('warning', 'Đang thử kết nối lại...', `Lần thử ${retryCount + 1}/${MAX_RETRIES}`);
+                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                    return apiRequest(tableName, action, data, retryCount + 1);
+                }
+
                 throw error;
             }
         }
 
-        // Login function
+        // Login handling
         async function handleLogin(username, password) {
             try {
                 if (!username || !password) {
@@ -468,24 +532,52 @@
                     return false;
                 }
 
-                const response = await apiRequest('DSNV', 'Find', {
-                    Selector: `Filter(DSNV, [username] = '${username}' and [password] = '${password}')`
-                });
-
-                console.log('Server Response:', response);
-
-                if (response && Array.isArray(response) && response.length > 0) {
-                    // Tìm nhân viên có username và password khớp
-                    const matchedEmployee = response.find(emp =>
+                // Kiểm tra xem có offline cache không
+                const cachedEmployees = localStorage.getItem('cachedEmployees');
+                if (!navigator.onLine && cachedEmployees) {
+                    const employees = JSON.parse(cachedEmployees);
+                    const matchedEmployee = employees.find(emp =>
                         emp.username === username && emp.password === password
                     );
 
                     if (matchedEmployee) {
-                        // Lưu thông tin nhân viên vào session
+                        // Lưu vào cả localStorage và sessionStorage
+                        localStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                        localStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                        localStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+
                         sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
                         sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
                         sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
                         return true;
+                    }
+                }
+
+                // Nếu online, thực hiện API call
+                if (navigator.onLine) {
+                    const response = await apiRequest('DSNV', 'Find', {
+                        Selector: `Filter(DSNV, [username] = '${username}' and [password] = '${password}')`
+                    });
+
+                    if (response && Array.isArray(response) && response.length > 0) {
+                        // Cache toàn bộ danh sách nhân viên
+                        localStorage.setItem('cachedEmployees', JSON.stringify(response));
+
+                        const matchedEmployee = response.find(emp =>
+                            emp.username === username && emp.password === password
+                        );
+
+                        if (matchedEmployee) {
+                            // Lưu vào cả localStorage và sessionStorage
+                            localStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                            localStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                            localStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+
+                            sessionStorage.setItem('employeeName', matchedEmployee['Họ và Tên']);
+                            sessionStorage.setItem('employeeRole', matchedEmployee['Phân quyền']);
+                            sessionStorage.setItem('employeeData', JSON.stringify(matchedEmployee));
+                            return true;
+                        }
                     }
                 }
 
@@ -494,122 +586,337 @@
 
             } catch (error) {
                 console.error('Login Error:', error);
-                $('#loginError').show();
+                showNotification('error', 'Lỗi đăng nhập', 'Vui lòng kiểm tra kết nối và thử lại');
                 return false;
             }
         }
 
-        // Check login status
+        // Check login status and handle UI
         function checkLoginStatus() {
-            const employeeName = sessionStorage.getItem('employeeName');
+            // Kiểm tra trong sessionStorage trước
+            let employeeName = sessionStorage.getItem('employeeName');
+            let employeeData = sessionStorage.getItem('employeeData');
+
+            // Nếu không có trong sessionStorage, kiểm tra localStorage
+            if (!employeeName) {
+                employeeName = localStorage.getItem('employeeName');
+                employeeData = localStorage.getItem('employeeData');
+
+                // Nếu tìm thấy trong localStorage, khôi phục vào sessionStorage
+                if (employeeName) {
+                    sessionStorage.setItem('employeeName', employeeName);
+                    sessionStorage.setItem('employeeRole', localStorage.getItem('employeeRole'));
+                    sessionStorage.setItem('employeeData', employeeData);
+                }
+            }
+
             if (!employeeName) {
                 sessionStorage.clear();
+                localStorage.removeItem('employeeName');
+                localStorage.removeItem('employeeRole');
+                localStorage.removeItem('employeeData');
                 $('#loginForm').show();
                 $('.menu-container, .p-4.border-t').hide();
                 return false;
             }
 
-            // Hiển thị thông tin nhân viên đăng nhập
-            const employeeData = JSON.parse(sessionStorage.getItem('employeeData') || '{}');
+            employeeData = JSON.parse(employeeData || '{}');
             $('#loginForm').hide();
             $('.menu-container, .p-4.border-t').show();
             $('#employeeName').text(employeeData['Họ và Tên']);
+
+            if (!navigator.onLine) {
+                $('#offlineBadge').show();
+            }
+
             return true;
         }
 
-        // Load menu items
+        // Load menu items with offline support
         async function loadMenuItems() {
             try {
                 $('.menu-container').html('<div class="p-4 text-center">Đang tải menu...</div>');
+
+                // Try to get cached menu first
+                const cachedMenu = localStorage.getItem('cachedMenu');
+                if (cachedMenu) {
+                    const menuData = JSON.parse(cachedMenu);
+                    renderMenu(menuData);
+                }
+
+                if (!navigator.onLine) {
+                    if (!cachedMenu) {
+                        $('.menu-container').html(`
+                           <div class="p-4 text-center text-red-600">
+                               Không thể tải menu. Vui lòng kết nối internet.
+                           </div>
+                       `);
+                    }
+                    return;
+                }
+
                 const menuItems = await apiRequest('san_pham', 'Find', {
                     Selector: "Filter(san_pham, true)"
                 });
 
-                $('.menu-container').empty();
-                menuItems.forEach(item => {
-                    $('.menu-container').append(createMenuItem(item));
-                });
-                attachEventHandlers();
+                // Cache the menu
+                localStorage.setItem('cachedMenu', JSON.stringify(menuItems));
+                renderMenu(menuItems);
+
             } catch (error) {
+                console.error('Load Menu Error:', error);
                 $('.menu-container').html(`
-                    <div class="p-4 text-center text-red-600">
-                        Không thể tải menu. Vui lòng thử lại sau.
-                        <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                            Thử lại
-                        </button>
-                    </div>
-                `);
+                   <div class="p-4 text-center text-red-600">
+                       Không thể tải menu. Vui lòng thử lại sau.
+                       <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                           Thử lại
+                       </button>
+                   </div>
+               `);
             }
+        }
+
+        // Render menu items
+        function renderMenu(menuItems) {
+            $('.menu-container').empty();
+            menuItems.forEach(item => {
+                $('.menu-container').append(createMenuItem(item));
+            });
+            attachEventHandlers();
         }
 
         // Create menu item HTML
         function createMenuItem(item) {
             return `
-                <div class="p-4 border-b hover:bg-gray-50" data-price="${item.gia}" data-id="${item.id_sp}">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-grow">
-                            <div class="font-medium">${item.ten_sanpham}</div>
-                            <div class="text-sm text-gray-600">${parseInt(item.gia).toLocaleString()}đ</div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="quantity-controls hidden flex items-center gap-2">
-                                <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                                <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
-                                <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
-                            </div>
-                            <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
-                        </div>
-                    </div>
-                </div>
-            `;
+               <div class="p-4 border-b hover:bg-gray-50" data-price="${item.gia}" data-id="${item.id_sp}">
+                   <div class="flex items-center justify-between">
+                       <div class="flex-grow">
+                           <div class="font-medium">${item.ten_sanpham}</div>
+                           <div class="text-sm text-gray-600">${parseInt(item.gia).toLocaleString()}đ</div>
+                       </div>
+                       <div class="flex items-center gap-2">
+                           <div class="quantity-controls hidden flex items-center gap-2">
+                               <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                               <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
+                               <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                           </div>
+                           <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                       </div>
+                   </div>
+               </div>
+           `;
         }
 
-        // Event Handlers
-        $(document).ready(function () {
-            // Initialize page
-            if (checkLoginStatus()) {
-                loadMenuItems();
+        // Handle order submission
+        async function handleCheckout() {
+            const total = $('.total-amount').text();
+            if (total === '0đ') {
+                showNotification('error', 'Lỗi', 'Vui lòng chọn món trước khi đặt hàng');
+                return;
             }
 
-            // Login form submission
-            $('#loginFormElement').submit(async function (e) {
-                e.preventDefault();
+            $('.loading-overlay').css('display', 'flex');
+            $('.checkout-btn').prop('disabled', true);
 
-                const submitBtn = $(this).find('button[type="submit"]');
-                submitBtn.prop('disabled', true);
-                submitBtn.text('Đang đăng nhập...');
-                $('#loginError').hide();
+            try {
+                const orderId = generateOrderId();
+                const employeeName = sessionStorage.getItem('employeeName');
 
-                const username = $('#username').val();
-                const password = $('#password').val();
+                // Prepare order data
+                const orderData = {
+                    Rows: [{
+                        id_order: orderId,
+                        tong_tien: parseInt(total.replace(/[^\d]/g, '')),
+                        nhanvien: employeeName
+                    }]
+                };
 
-                const success = await handleLogin(username, password);
-                if (success) {
-                    $('#loginError').hide();
-                    await loadMenuItems();
-                    checkLoginStatus();
+                // Prepare order details
+                const orderDetails = {
+                    Rows: $('.quantity-controls:not(.hidden)').map(function () {
+                        const quantity = parseInt($(this).find('.quantity-input').val());
+                        const itemContainer = $(this).closest('[data-price]');
+                        const price = parseInt(itemContainer.data('price'));
+                        const productName = itemContainer.find('.font-medium').text();
+                        return {
+                            id_order: orderId,
+                            ten_sanpham: productName,
+                            so_luong: quantity,
+                            gia: price,
+                            nhanvien: employeeName
+                        };
+                    }).get()
+                };
+
+                if (!navigator.onLine) {
+                    // Save order locally if offline
+                    saveOrderLocally({
+                        orderId,
+                        orderData,
+                        orderDetails,
+                        timestamp: new Date().getTime()
+                    });
+
+                    showNotification('warning', 'Đơn hàng đã được lưu offline',
+                        'Sẽ tự động gửi khi có internet');
+
+                    // Update and print receipt
+                    updateReceipt(orderDetails.Rows, employeeName, total);
+                    resetForm();
                 } else {
-                    $('#loginError').show();
-                    $('#password').val('').focus();
+                    // Send order online
+                    await apiRequest('order_nuoc', 'Add', orderData);
+                    await apiRequest('order_detail', 'Add', orderDetails);
+
+                    showNotification('success', 'Đặt hàng thành công',
+                        'Đơn hàng đã được gửi thành công');
+
+                    // Update and print receipt
+                    updateReceipt(orderDetails.Rows, employeeName, total);
+                    resetForm();
                 }
 
-                submitBtn.prop('disabled', false);
-                submitBtn.text('Đăng nhập');
+            } catch (error) {
+                console.error('Checkout Error:', error);
+                showNotification('error', 'Lỗi đặt hàng',
+                    'Đơn hàng sẽ được lưu offline và gửi lại sau');
+
+                // Save failed order locally
+                saveOrderLocally({
+                    orderId: generateOrderId(),
+                    orderData,
+                    orderDetails,
+                    timestamp: new Date().getTime()
+                });
+            } finally {
+                $('.loading-overlay').hide();
+                $('.checkout-btn').prop('disabled', false);
+            }
+        }
+
+        // Update receipt
+        function updateReceipt(items, employeeName, total) {
+            let receiptItems = '';
+            items.forEach(item => {
+                const itemTotal = item.gia * item.so_luong;
+                receiptItems += `
+                   <div class="receipt-item">
+                       <span class="item-name">${item.ten_sanpham}</span>
+                       <span class="item-quantity">${item.so_luong}</span>
+                       <span class="item-total">${itemTotal.toLocaleString()}</span>
+                   </div>
+               `;
             });
 
-            // Logout button
-            $('#logoutBtn').click(function () {
-                sessionStorage.removeItem('employeeName');
-                sessionStorage.removeItem('employeeRole');
-                sessionStorage.removeItem('employeeData');
-                checkLoginStatus();
-                $('#username').val('');
-                $('#password').val('');
-                $('#loginError').hide();
-            });
-        });
+            $('#receipt-cashier').text(employeeName);
+            $('#receipt-date').text(new Date().toLocaleString('vi-VN'));
+            $('#receipt-items-list').html(receiptItems);
+            $('#receipt-total').text(total);
 
-        // Attach event handlers for menu items
+            $('#receipt').show();
+            window.print();
+            $('#receipt').hide();
+        }
+
+        // Reset form after order
+        function resetForm() {
+            $('.quantity-controls').addClass('hidden');
+            $('.select-btn').removeClass('hidden');
+            $('.quantity-input').val(1);
+            calculateTotal();
+        }
+
+        // Local storage functions for offline data
+        function saveOrderLocally(order) {
+            const orders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            orders.push(order);
+            localStorage.setItem('pendingOrders', JSON.stringify(orders));
+        }
+
+        function removeLocalOrder(orderId) {
+            const orders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            const filteredOrders = orders.filter(order => order.orderId !== orderId);
+            localStorage.setItem('pendingOrders', JSON.stringify(filteredOrders));
+        }
+
+        // Sync pending orders
+        async function checkAndSyncPendingOrders() {
+            const orders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            if (orders.length > 0) {
+                showNotification('info', 'Đang đồng bộ dữ liệu',
+                    `Có ${orders.length} đơn hàng đang chờ xử lý`);
+                await syncPendingOrders();
+            }
+        }
+
+        async function syncPendingOrders() {
+            const orders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+
+            for (const order of orders) {
+                try {
+                    await apiRequest('order_nuoc', 'Add', order.orderData);
+                    await apiRequest('order_detail', 'Add', order.orderDetails);
+                    removeLocalOrder(order.orderId);
+                    showNotification('success', 'Đồng bộ thành công',
+                        'Đơn hàng đã được gửi lên hệ thống');
+                } catch (error) {
+                    console.error('Sync Error:', error);
+                    showNotification('error', 'Lỗi đồng bộ',
+                        'Sẽ thử lại sau');
+                    break;
+                }
+            }
+        }
+
+        // Show notification
+        function showNotification(type, title, message) {
+            const notificationClass = `notification-${type}`;
+            const notification = $(`
+               <div class="notification ${notificationClass}">
+                   <div>
+                       <h3 class="font-bold">${title}</h3>
+                       <p class="text-sm">${message}</p>
+                   </div>
+               </div>
+           `);
+
+            // Remove existing notifications
+            $('.notification').remove();
+
+            $('body').append(notification);
+            setTimeout(() => {
+                notification.addClass('show');
+            }, 100);
+
+            setTimeout(() => {
+                notification.removeClass('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Calculate total
+        function calculateTotal() {
+            let total = 0;
+            $('.quantity-controls:not(.hidden)').each(function () {
+                const quantity = parseInt($(this).find('.quantity-input').val());
+                const price = parseInt($(this).closest('[data-price]').data('price'));
+                total += quantity * price;
+            });
+            $('.total-amount').text(total.toLocaleString() + 'đ');
+        }
+
+        // Generate Order ID
+        function generateOrderId() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return `OD_${day}${hours}${minutes}${seconds}_${random}`;
+        }
+
+        // Attach event handlers
         function attachEventHandlers() {
             // Select button
             $('.select-btn').click(function () {
@@ -642,132 +949,67 @@
                 calculateTotal();
             });
 
-            // Checkout button
-            $('.checkout-btn').click(async function () {
-                const total = $('.total-amount').text();
-                if (total === '0đ') {
-                    showNotification('error');
-                    return;
-                }
+            // Retry button for menu loading
+            $('.retry-btn').click(function () {
+                loadMenuItems();
+            });
+        }
 
-                $('.loading-overlay').css('display', 'flex');
+        // Initialize on page load
+        $(document).ready(function () {
+            // Check network status
+            if (!navigator.onLine) {
+                $('#offlineBadge').show();
+            }
+
+            // Initialize page
+            if (checkLoginStatus()) {
+                loadMenuItems();
+            }
+
+            // Login form submission
+            $('#loginFormElement').submit(async function (e) {
+                e.preventDefault();
+
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true).text('Đang đăng nhập...');
+                $('#loginError').hide();
+
+                const username = $('#username').val();
+                const password = $('#password').val();
 
                 try {
-                    const orderId = generateOrderId();
-                    const employeeName = sessionStorage.getItem('employeeName');
-
-                    // Order data
-                    const orderData = {
-                        Rows: [{
-                            id_order: orderId,
-                            tong_tien: parseInt(total.replace(/[^\d]/g, '')),
-                            nhanvien: employeeName
-                        }]
-                    };
-
-                    // Gửi order
-                    const orderResponse = await apiRequest('order_nuoc', 'Add', orderData);
-
-                    // Order details
-                    const orderDetails = {
-                        Rows: $('.quantity-controls:not(.hidden)').map(function () {
-                            const quantity = parseInt($(this).find('.quantity-input').val());
-                            const itemContainer = $(this).closest('[data-price]');
-                            const price = parseInt(itemContainer.data('price'));
-                            const productName = itemContainer.find('.font-medium').text();
-                            return {
-                                id_order: orderId,
-                                ten_sanpham: productName,
-                                so_luong: quantity,
-                                gia: price,
-                                nhanvien: employeeName
-                            };
-                        }).get()
-                    };
-
-                    // Gửi order details
-                    const detailResponse = await apiRequest('order_detail', 'Add', orderDetails);
-
-                    // Update receipt items
-                    let receiptItems = '';
-                    $('.quantity-controls:not(.hidden)').each(function () {
-                        const itemContainer = $(this).closest('[data-price]');
-                        const itemName = itemContainer.find('.font-medium').text();
-                        const quantity = parseInt($(this).find('.quantity-input').val());
-                        const price = parseInt(itemContainer.data('price'));
-                        const itemTotal = price * quantity;
-
-                        receiptItems += `
-            <div class="receipt-item">
-                <span class="item-name">${itemName}</span>
-                <span class="item-quantity">${quantity}</span>
-                <span class="item-total">${itemTotal.toLocaleString()}</span>
-            </div>
-        `;
-                    });
-
-                    // Update receipt information
-                    // $('#receipt-order-id').text(orderId);
-                    $('#receipt-cashier').text(employeeName);
-                    $('#receipt-date').text(new Date().toLocaleString('vi-VN'));
-                    $('#receipt-items-list').html(receiptItems);
-                    $('#receipt-total').text(total);
-
-                    $('.loading-overlay').hide();
-                    showNotification('success');
-
-                    setTimeout(() => {
-                        $('#receipt').show();
-                        window.print();
-                        $('#receipt').hide();
-
-                        // Reset form
-                        $('.quantity-controls').addClass('hidden');
-                        $('.select-btn').removeClass('hidden');
-                        $('.quantity-input').val(1);
-                        calculateTotal();
-                    }, 200);
-
+                    const success = await handleLogin(username, password);
+                    if (success) {
+                        $('#loginError').hide();
+                        await loadMenuItems();
+                        checkLoginStatus();
+                    } else {
+                        $('#loginError').show();
+                        $('#password').val('').focus();
+                    }
                 } catch (error) {
-                    console.error('Error:', error);
-                    $('.loading-overlay').hide();
-                    showNotification('error');
+                    console.error('Login Error:', error);
+                    showNotification('error', 'Lỗi đăng nhập', 'Vui lòng thử lại sau');
+                } finally {
+                    submitBtn.prop('disabled', false).text('Đăng nhập');
                 }
             });
-        }
 
-        // Calculate total
-        function calculateTotal() {
-            let total = 0;
-            $('.quantity-controls:not(.hidden)').each(function () {
-                const quantity = parseInt($(this).find('.quantity-input').val());
-                const price = parseInt($(this).closest('[data-price]').data('price'));
-                total += quantity * price;
+            // Logout button
+            $('#logoutBtn').click(function () {
+                sessionStorage.clear();
+                localStorage.removeItem('employeeName');
+                localStorage.removeItem('employeeRole');
+                localStorage.removeItem('employeeData');
+                checkLoginStatus();
+                $('#username').val('');
+                $('#password').val('');
+                $('#loginError').hide();
             });
-            $('.total-amount').text(total.toLocaleString() + 'đ');
-        }
 
-        // Show notification
-        function showNotification(type) {
-            const notification = type === 'success' ?
-                $('#successNotification') : $('#errorNotification');
-
-            notification.addClass('show');
-            setTimeout(() => {
-                notification.removeClass('show');
-            }, 3000);
-        }
-
-        // Generate Order ID
-        function generateOrderId() {
-            const now = new Date();
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            return `OD_${day}${hours}${minutes}${seconds}`;
-        }
+            // Checkout button
+            $('.checkout-btn').click(handleCheckout);
+        });
     </script>
 </body>
-
-</html>
