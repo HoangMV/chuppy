@@ -13,19 +13,14 @@
             height: 100%;
             margin: 0;
             padding: 0;
+            touch-action: none;
         }
 
-        /* Mobile styles */
-        @media screen {
-
-            html,
-            body {
-                overscroll-behavior-y: none;
-                overflow: hidden;
-                position: fixed;
-                width: 100%;
-                touch-action: none;
-            }
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
 
         .menu-container::-webkit-scrollbar {
@@ -647,10 +642,10 @@
                 if (!navigator.onLine) {
                     if (!cachedMenu) {
                         $('.menu-container').html(`
-                           <div class="p-4 text-center text-red-600">
-                               Không thể tải menu. Vui lòng kết nối internet.
-                           </div>
-                       `);
+                            <div class="p-4 text-center text-red-600">
+                                Không thể tải menu. Vui lòng kết nối internet.
+                            </div>
+                        `);
                     }
                     return;
                 }
@@ -666,13 +661,13 @@
             } catch (error) {
                 console.error('Load Menu Error:', error);
                 $('.menu-container').html(`
-                   <div class="p-4 text-center text-red-600">
-                       Không thể tải menu. Vui lòng thử lại sau.
-                       <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                           Thử lại
-                       </button>
-                   </div>
-               `);
+                    <div class="p-4 text-center text-red-600">
+                        Không thể tải menu. Vui lòng thử lại sau.
+                        <button class="retry-btn mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Thử lại
+                        </button>
+                    </div>
+                `);
             }
         }
 
@@ -688,23 +683,23 @@
         // Create menu item HTML
         function createMenuItem(item) {
             return `
-               <div class="p-4 border-b hover:bg-gray-50" data-price="${item.gia}" data-id="${item.id_sp}">
-                   <div class="flex items-center justify-between">
-                       <div class="flex-grow">
-                           <div class="font-medium">${item.ten_sanpham}</div>
-                           <div class="text-sm text-gray-600">${parseInt(item.gia).toLocaleString()}đ</div>
-                       </div>
-                       <div class="flex items-center gap-2">
-                           <div class="quantity-controls hidden flex items-center gap-2">
-                               <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
-                               <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
-                               <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
-                           </div>
-                           <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
-                       </div>
-                   </div>
-               </div>
-           `;
+                <div class="p-4 border-b hover:bg-gray-50" data-price="${item.gia}" data-id="${item.id_sp}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-grow">
+                            <div class="font-medium">${item.ten_sanpham}</div>
+                            <div class="text-sm text-gray-600">${parseInt(item.gia).toLocaleString()}đ</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="quantity-controls hidden flex items-center gap-2">
+                                <button class="decrease-btn w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                                <input type="number" class="quantity-input w-12 text-center border rounded p-1" value="1" min="0" readonly>
+                                <button class="increase-btn w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                            </div>
+                            <button class="select-btn px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Chọn</button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         // Handle order submission
@@ -727,7 +722,16 @@
                     Rows: [{
                         id_order: orderId,
                         tong_tien: parseInt(total.replace(/[^\d]/g, '')),
-                        nhanvien: employeeName
+                        nhanvien: employeeName,
+                        ghichu: new Date().toLocaleString('vi-VN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        })
                     }]
                 };
 
@@ -743,7 +747,16 @@
                             ten_sanpham: productName,
                             so_luong: quantity,
                             gia: price,
-                            nhanvien: employeeName
+                            nhanvien: employeeName,
+                            ghichu: new Date().toLocaleString('vi-VN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: false
+                            })
                         };
                     }).get()
                 };
@@ -800,12 +813,12 @@
             items.forEach(item => {
                 const itemTotal = item.gia * item.so_luong;
                 receiptItems += `
-                   <div class="receipt-item">
-                       <span class="item-name">${item.ten_sanpham}</span>
-                       <span class="item-quantity">${item.so_luong}</span>
-                       <span class="item-total">${itemTotal.toLocaleString()}</span>
-                   </div>
-               `;
+                    <div class="receipt-item">
+                        <span class="item-name">${item.ten_sanpham}</span>
+                        <span class="item-quantity">${item.so_luong}</span>
+                        <span class="item-total">${itemTotal.toLocaleString()}</span>
+                    </div>
+                `;
             });
 
             $('#receipt-cashier').text(employeeName);
@@ -872,13 +885,13 @@
         function showNotification(type, title, message) {
             const notificationClass = `notification-${type}`;
             const notification = $(`
-               <div class="notification ${notificationClass}">
-                   <div>
-                       <h3 class="font-bold">${title}</h3>
-                       <p class="text-sm">${message}</p>
-                   </div>
-               </div>
-           `);
+                <div class="notification ${notificationClass}">
+                    <div>
+                        <h3 class="font-bold">${title}</h3>
+                        <p class="text-sm">${message}</p>
+                    </div>
+                </div>
+            `);
 
             // Remove existing notifications
             $('.notification').remove();
@@ -1013,3 +1026,5 @@
         });
     </script>
 </body>
+
+</html>
